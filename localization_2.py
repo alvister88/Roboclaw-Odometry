@@ -50,8 +50,8 @@ def move_motors(speed1, speed2,m1,m2,m3,m4, buffer):
         speed1 = -speed1
     if m3 < 0 or m4 < 0:
         speed2 = -speed2
-    rcL.SpeedAccelDistanceM1M2(left_side, 1000, speed1, abs(int(m1)), speed1, abs(int(m2)), buffer)
-    rcR.SpeedAccelDistanceM1M2(right_side, 1000, speed2, abs(int(m3)), speed2, abs(int(m4)), buffer)
+    rcL.SpeedAccelDistanceM1M2(left_side, 0, speed1, abs(int(m1)), speed1, abs(int(m2)), buffer)
+    rcR.SpeedAccelDistanceM1M2(right_side, 0, speed2, abs(int(m3)), speed2, abs(int(m4)), buffer)
     # buffer 1 reading
     depth1 = np.uint8  
     # buffer 2 reading
@@ -187,7 +187,7 @@ def localize():
 
         time.sleep(1)
 
-tics_per_rev = 1700
+tics_per_rev = 2442.96
 wheel_circumference = 4 * math.pi
 left_side = 0x81
 right_side = 0x80
@@ -211,7 +211,7 @@ if active_opmode:
     # add_waypoint(2500, 30, -20, -100)
     # add_waypoint(2500, 0, 0, 0)
     # localize()
-    drive_to_position(3500, 10, 0, 0)    
+    drive_to_position(1000, 10, 0, 0)    
 
     show_encoder()
     # drive_straight(1000, 15, 0)
