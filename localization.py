@@ -16,6 +16,7 @@ rcL.Open()
 rcR.Open()
 
 # test encoder method
+# testing
 def initencoder():
     if startup:
         rcL.ResetEncoders(left_side)
