@@ -10,8 +10,8 @@ from roboclaw_3 import Roboclaw
 #Windows comport name
 # rc = Roboclaw("COM11",115200)
 #Linux comport name
-rcL = Roboclaw("/dev/ttyACM0",115200)
-rcR = Roboclaw("/dev/ttyACM1",115200)
+rcL = Roboclaw("/dev/ttyACM0", 115200)
+rcR = Roboclaw("/dev/ttyACM1", 115200)
 rcL.Open()
 rcR.Open()
 
@@ -62,7 +62,7 @@ def move_motors(speed1, speed2,m1,m2,m3,m4, buffer):
         depth2 = rcR.ReadBuffers(right_side)
         time.sleep(0.01)
     drive_stop
-    time.sleep(1)       
+    time.sleep(1)
     
 def drive_straight(speed, distance, buffer):
     move_motors(speed, speed, distance, distance, distance, distance, buffer)
@@ -70,64 +70,97 @@ def drive_straight(speed, distance, buffer):
 def drive_stop():
     move_motors(0,0,0,0,0,0,0)
 
-# counter clockwise positve, 0 -> 180; 0 -> -180
+# turn around back axle
 def turn_center(speed, angle, buffer):
+    global current_heading
     # inches
-    robot_width = 9.5
+    robot_width = 14
     turn_circumference = math.pi * robot_width
     distance = (angle/360.0) * turn_circumference
     # move_motors(distance, distance, -1 * distance, -1 * distance)
     move_motors(speed, speed, -distance, -distance, distance, distance, buffer)
-    drive_stop
+    # drive_stop
+    current_heading += angle
+    normalize()
 
-# drive relative to current position
-def drive_to_position(speed, x_dist, y_dist, face_angle):
-    global current_position
-    global current_angle
-    turn_angle = math.atan2(y_dist, x_dist)
-    
+# counter clockwise positve, 0 -> 180; 0 -> -180
+def turn_heading(speed, new_heading, buffer):
+    global current_heading
+    turn_angle = new_heading - current_heading
+
     if turn_angle > 180:
         turn_angle -= 360
     elif turn_angle < -180:
         turn_angle += 360
+
+    turn_center(speed, turn_angle, buffer)
+    current_heading = new_heading
+    normalize()
+
+# normalize global heading
+def normalize():
+    global current_heading
+    
+    if current_heading > 180:
+        current_heading % 360
+    elif current_heading < -180:
+        current_heading % 360
+
+
+
+# drive relative to current position
+def drive_to_position(speed, x_dist, y_dist, face_angle):
+    global current_position
+    global current_heading
+    turn_angle = math.atan2(y_dist, x_dist) * (180/math.pi)
+    print("turn angle: " + str(turn_angle))
+    
     turn_center(speed, turn_angle, 0)
     
-    target_distance = math.sqrt(math.pow(x_dist) + math.pow(y_dist))
+    target_distance = math.sqrt(math.pow(x_dist, 2) + math.pow(y_dist, 2))
+    print("target distance: " + str(target_distance))
     
     drive_straight(speed, target_distance, 0)
-    turn_center(speed, face_angle - turn_angle, 0)
+    face_turn = face_angle - turn_angle
+    
+    if face_turn > 180:
+        face_turn -= 360
+    elif face_turn < -180:
+        face_turn += 360
+
+    print("new angle: " + str(face_turn))
+    turn_center(speed, face_turn, 0)
     
     current_position[0] += x_dist
     current_position[1] += y_dist
-    current_angle += face_angle
+
+    print("current position: " + str(current_position))
+    print("current heading: " + str(current_heading))
     
 
 # drive to absolute location; (x,y) plane
 def drive_to_location(speed, x_pos, y_pos, face_angle):
     global current_position
-    global current_angle
+    global current_heading
     # other tan acute angle
-    target_angle = math.atan2(y_pos - current_position[1], x_pos - current_position[0]) * (180/math.pi) - current_angle
-    print("target angle: " + str(target_angle))
+    target_heading = math.atan2(y_pos - current_position[1], x_pos - current_position[0]) * (180/math.pi)
+    print("target heading: " + str(target_heading))
     
-    if target_angle > 180:
-        target_angle -= 360
-    elif target_angle < -180:
-        target_angle += 360
-    turn_center(speed, target_angle, 0)
+    turn_heading(speed, target_heading, 0)
 
-    new_angle = current_angle + target_angle
-    print("new angle: " + str(new_angle))
+    print("current heading: " + str(current_heading))
     target_distance = math.sqrt(math.pow(x_pos - current_position[0], 2) + math.pow(y_pos - current_position[1], 2))
     print("target distance: " + str(target_distance))
     
     drive_straight(speed, target_distance, 0)
-    print("face angle: " + str(face_angle - new_angle))
-    turn_center(speed, face_angle - new_angle, 0)
+    print("face angle: " + str(face_angle))
+    turn_heading(speed, face_angle, 0)
     
     current_position[0] = x_pos
     current_position[1] = y_pos
-    current_angle = face_angle
+
+    print("current position: " + str(current_position))
+    print("current heading: " + str(current_heading))
 
 
     #(x (front back),y(left right)) 
@@ -138,7 +171,7 @@ def add_waypoint(speed, x_pos, y_pos, face_angle):
 def localize():
     global waypoints
     global current_position
-    global current_angle
+    global current_heading
     
     while(len(waypoints) != 0):
         target_location = waypoints[0]
@@ -154,8 +187,7 @@ def localize():
 
         time.sleep(1)
 
-
-tics_per_rev = 2443
+tics_per_rev = 1700
 wheel_circumference = 4 * math.pi
 left_side = 0x81
 right_side = 0x80
@@ -166,7 +198,7 @@ startup = True
 
 # absolute position and angle heading
 current_position = [0,0]
-current_angle = 0
+current_heading = 0
 
 
 while startup:
@@ -175,19 +207,18 @@ while startup:
         startup = False
 
 if active_opmode:
-    add_waypoint(2500, 20, -20, 90)
-    add_waypoint(2500, 32, -20, 30)
-    add_waypoint(2500, 0, 0, 0)
-    
-    # # add_waypoint(1000, 50, -20, 50)
-    # # add_waypoint(700, 50, 0, 50)
-    localize()
-    # show_encoder()
-    # drive_straight(1500, 15, 0)
+    # add_waypoint(2500, 20, -20, 90)
+    # add_waypoint(2500, 30, -20, -100)
+    # add_waypoint(2500, 0, 0, 0)
+    # localize()
+    drive_to_position(3500, 10, 0, 0)    
+
+    show_encoder()
+    # drive_straight(1000, 15, 0)
     # show_encoder()
 
     # turn_center(7000, 90, 0)
-
+    
     active_opmode = False
       
 
