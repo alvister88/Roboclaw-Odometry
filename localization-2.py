@@ -80,7 +80,30 @@ def turn_center(speed, angle, buffer):
     move_motors(speed, speed, -distance, -distance, distance, distance, buffer)
     drive_stop
 
-def drive_to_position(speed, x_pos, y_pos, face_angle):
+# drive relative to current position
+def drive_to_position(speed, x_dist, y_dist, face_angle):
+    global current_position
+    global current_angle
+    turn_angle = math.atan2(y_dist, x_dist)
+    
+    if turn_angle > 180:
+        turn_angle -= 360
+    elif turn_angle < -180:
+        turn_angle += 360
+    turn_center(speed, turn_angle, 0)
+    
+    target_distance = math.sqrt(math.pow(x_dist) + math.pow(y_dist))
+    
+    drive_straight(speed, target_distance, 0)
+    turn_center(speed, face_angle - turn_angle, 0)
+    
+    current_position[0] += x_dist
+    current_position[1] += y_dist
+    current_angle += face_angle
+    
+
+# drive to absolute location; (x,y) plane
+def drive_to_location(speed, x_pos, y_pos, face_angle):
     global current_position
     global current_angle
     # other tan acute angle
@@ -118,13 +141,13 @@ def localize():
     global current_angle
     
     while(len(waypoints) != 0):
-        target_position = waypoints[0]
-        speed = target_position[0]
-        x_pos = target_position[1]
-        y_pos = target_position[2]
-        face_angle = target_position[3]
+        target_location = waypoints[0]
+        speed = target_location[0]
+        x_pos = target_location[1]
+        y_pos = target_location[2]
+        face_angle = target_location[3]
 
-        drive_to_position(speed, x_pos, y_pos, face_angle)
+        drive_to_location(speed, x_pos, y_pos, face_angle)
         
         print("next")
         waypoints.pop(0)
@@ -140,6 +163,8 @@ position = []
 waypoints = []
 active_opmode = True
 startup = True
+
+# absolute position and angle heading
 current_position = [0,0]
 current_angle = 0
 
