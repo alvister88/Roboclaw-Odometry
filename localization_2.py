@@ -30,17 +30,19 @@ def show_encoder():
     # left back
     encoderL2 = rcL.ReadEncM2(left_side)
     # right front
-    encoderR1 = rcR.ReadEncM1(right_side)
+    encoderR1 = rcR.ReadEncM1(right_side) 
     # right back
     encoderR2 = rcR.ReadEncM2(right_side)
-    print(encoderL1 - MID_QUADRATURE_VALUE),
-    print(encoderL2 - MID_QUADRATURE_VALUE)
-    print(encoderR1 - MID_QUADRATURE_VALUE),
-    print(encoderR2 - MID_QUADRATURE_VALUE)
+    
+    print(tuple(np.subtract(encoderL1, (0, 250000, 0))))
+    print(tuple(np.subtract(encoderL2, (0, 250000, 0))))
+    print(tuple(np.subtract(encoderR1, (0, 250000, 0))))
+    print(tuple(np.subtract(encoderR2, (0, 250000, 0))))
 
 def tic_distance(inches):
     return ((inches / wheel_circumference) * tics_per_rev) + MID_QUADRATURE_VALUE
 
+# (tics/s, tics/s, inches, inches, inches, inches, (0 or 1))
 def move_motors(speed1, speed2,m1,m2,m3,m4, buffer):
     accel = 1000
     deccel = 1000
@@ -107,8 +109,6 @@ def normalize():
     elif current_heading < -180:
         current_heading % 360
         current_heading *= -1
-
-
 
 # drive relative to current position
 def drive_to_position(speed, x_dist, y_dist, face_angle):
@@ -197,6 +197,7 @@ position = []
 waypoints = []
 active_opmode = True
 startup = True
+
 # use mid encoder normalize to prevent wrap around
 MIN_QUADRATURE_VALUE = np.uint
 MAX_QUADRATURE_VALUE = np.uint
@@ -220,8 +221,8 @@ if active_opmode:
     # add_waypoint(2500, 30, -20, -100)
     # add_waypoint(2500, 0, 0, 0)
     # localize()
-    drive_to_position(2000, 10, 0, 0)    
-    drive_to_position(3000, -10, 0, 0)
+    drive_to_position(4000, 0, 0, 90)    
+    # drive_to_position(3000, -10, 0, 0)
     
     show_encoder()
     # drive_straight(1000, 15, 0)
