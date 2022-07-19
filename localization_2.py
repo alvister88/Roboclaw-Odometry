@@ -17,11 +17,12 @@ rcR.Open()
 
 # test encoder method
 # testing
-def initencoder():
-    if startup:
-        rcL.ResetEncoders(left_side)
-        rcR.ResetEncoders(right_side)
-    time.sleep(2)
+
+def normalize_encoders():
+    rcL.SetEncM1(left_side, MID_QUADRATURE_VALUE)
+    rcL.SetEncM2(left_side, MID_QUADRATURE_VALUE)
+    rcR.SetEncM1(right_side, MID_QUADRATURE_VALUE)
+    rcR.SetEncM2(right_side, MID_QUADRATURE_VALUE)
 
 def show_encoder():
     # left front
@@ -42,6 +43,7 @@ def tic_distance(inches):
     return (inches / wheel_circumference) * tics_per_rev
 
 def move_motors(speed1, speed2,m1,m2,m3,m4, buffer):
+    
     m1 = tic_distance(m1)
     m2 = tic_distance(m2)
     m3 = tic_distance(m3)
@@ -50,8 +52,9 @@ def move_motors(speed1, speed2,m1,m2,m3,m4, buffer):
         speed1 = -speed1
     if m3 < 0 or m4 < 0:
         speed2 = -speed2
-    rcL.SpeedAccelDistanceM1M2(left_side, 0, speed1, abs(int(m1)), speed1, abs(int(m2)), buffer)
-    rcR.SpeedAccelDistanceM1M2(right_side, 0, speed2, abs(int(m3)), speed2, abs(int(m4)), buffer)
+    rcL.SpeedAccelDeccelPositionM1M2(left_side, 500, speed1, 500, abs(int(m1)), 500, speed1, 500, abs(int(m2)), buffer)
+    rcR.SpeedAccelDeccelPositionM1M2(right_side, 500, speed2, 500, abs(int(m3)), 500, speed2, 500, abs(int(m4)), buffer)
+    
     # buffer 1 reading
     depth1 = np.uint8  
     # buffer 2 reading
@@ -60,9 +63,11 @@ def move_motors(speed1, speed2,m1,m2,m3,m4, buffer):
     while  depth1 != (1, left_side, left_side) and depth2 != (1, right_side, right_side):
         depth1 = rcL.ReadBuffers(left_side)
         depth2 = rcR.ReadBuffers(right_side)
-        time.sleep(0.01)
-    drive_stop
-    time.sleep(1)
+        time.sleep(0.1)
+    
+    # zero_encoders()
+    normalize_encoders()
+    show_encoder()
     
 def drive_straight(speed, distance, buffer):
     move_motors(speed, speed, distance, distance, distance, distance, buffer)
@@ -100,11 +105,12 @@ def turn_heading(speed, new_heading, buffer):
 # normalize global heading
 def normalize():
     global current_heading
-    
+
     if current_heading > 180:
         current_heading % 360
     elif current_heading < -180:
         current_heading % 360
+        current_heading *= -1
 
 
 
@@ -195,6 +201,10 @@ position = []
 waypoints = []
 active_opmode = True
 startup = True
+# use mid encoder normalize to prevent wrap around
+MIN_QUADRATURE_VALUE = 0
+MAX_QUADRATURE_VALUE = 500000
+MID_QUADRATURE_VALUE = MAX_QUADRATURE_VALUE/2
 
 # absolute position and angle heading
 current_position = [0,0]
@@ -203,7 +213,7 @@ current_heading = 0
 
 while startup:
     if startup:
-        initencoder()
+        normalize_encoders()
         startup = False
 
 if active_opmode:
@@ -211,8 +221,9 @@ if active_opmode:
     # add_waypoint(2500, 30, -20, -100)
     # add_waypoint(2500, 0, 0, 0)
     # localize()
-    drive_to_position(1000, 10, 0, 0)    
-
+    drive_to_position(2000, 10, 0, 0)    
+    drive_to_position(3000, 10, 0, 0)
+    
     show_encoder()
     # drive_straight(1000, 15, 0)
     # show_encoder()
