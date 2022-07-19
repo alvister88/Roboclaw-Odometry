@@ -33,27 +33,24 @@ def show_encoder():
     encoderR1 = rcR.ReadEncM1(right_side)
     # right back
     encoderR2 = rcR.ReadEncM2(right_side)
-    print(encoderL1),
-    print(encoderL2)
-    print(encoderR1),
-    print(encoderR2)
-    time.sleep(1)
+    print(encoderL1 - MID_QUADRATURE_VALUE),
+    print(encoderL2 - MID_QUADRATURE_VALUE)
+    print(encoderR1 - MID_QUADRATURE_VALUE),
+    print(encoderR2 - MID_QUADRATURE_VALUE)
 
 def tic_distance(inches):
-    return (inches / wheel_circumference) * tics_per_rev
+    return ((inches / wheel_circumference) * tics_per_rev) + MID_QUADRATURE_VALUE
 
 def move_motors(speed1, speed2,m1,m2,m3,m4, buffer):
-    
+    accel = 1000
+    deccel = 1000
     m1 = tic_distance(m1)
     m2 = tic_distance(m2)
     m3 = tic_distance(m3)
     m4 = tic_distance(m4)
-    if m1 < 0 or m2 < 0:
-        speed1 = -speed1
-    if m3 < 0 or m4 < 0:
-        speed2 = -speed2
-    rcL.SpeedAccelDeccelPositionM1M2(left_side, 500, speed1, 500, abs(int(m1)), 500, speed1, 500, abs(int(m2)), buffer)
-    rcR.SpeedAccelDeccelPositionM1M2(right_side, 500, speed2, 500, abs(int(m3)), 500, speed2, 500, abs(int(m4)), buffer)
+   
+    rcL.SpeedAccelDeccelPositionM1M2(left_side, accel, speed1, deccel, int(m1), accel, speed1, deccel, int(m2), buffer)
+    rcR.SpeedAccelDeccelPositionM1M2(right_side, accel, speed2, deccel, int(m3), accel, speed2, deccel, int(m4), buffer)
     
     # buffer 1 reading
     depth1 = np.uint8  
@@ -63,9 +60,8 @@ def move_motors(speed1, speed2,m1,m2,m3,m4, buffer):
     while  depth1 != (1, left_side, left_side) and depth2 != (1, right_side, right_side):
         depth1 = rcL.ReadBuffers(left_side)
         depth2 = rcR.ReadBuffers(right_side)
-        time.sleep(0.1)
+        time.sleep(0.01)
     
-    # zero_encoders()
     normalize_encoders()
     show_encoder()
     
@@ -202,9 +198,12 @@ waypoints = []
 active_opmode = True
 startup = True
 # use mid encoder normalize to prevent wrap around
+MIN_QUADRATURE_VALUE = np.uint
+MAX_QUADRATURE_VALUE = np.uint
+MID_QUADRATURE_VALUE = np.uint
 MIN_QUADRATURE_VALUE = 0
 MAX_QUADRATURE_VALUE = 500000
-MID_QUADRATURE_VALUE = MAX_QUADRATURE_VALUE/2
+MID_QUADRATURE_VALUE = int(MAX_QUADRATURE_VALUE/2)
 
 # absolute position and angle heading
 current_position = [0,0]
@@ -222,7 +221,7 @@ if active_opmode:
     # add_waypoint(2500, 0, 0, 0)
     # localize()
     drive_to_position(2000, 10, 0, 0)    
-    drive_to_position(3000, 10, 0, 0)
+    drive_to_position(3000, -10, 0, 0)
     
     show_encoder()
     # drive_straight(1000, 15, 0)
