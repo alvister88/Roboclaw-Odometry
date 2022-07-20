@@ -1,4 +1,4 @@
-from threading import Thread
+from threading import Thread, current_thread
 from stringprep import in_table_a1
 import time
 import math
@@ -6,9 +6,8 @@ from tracemalloc import stop
 import numpy as np
 from roboclaw_3 import Roboclaw
 
+# Alvin's attempt at python localization :)
 
-#Windows comport name
-# rc = Roboclaw("COM11",115200)
 #Linux comport name
 rcL = Roboclaw("/dev/ttyACM0", 115200)
 rcR = Roboclaw("/dev/ttyACM1", 115200)
@@ -43,16 +42,18 @@ def tic_distance(inches):
     return ((inches / wheel_circumference) * tics_per_rev) + MID_QUADRATURE_VALUE
 
 # (tics/s, tics/s, inches, inches, inches, inches, (0 or 1))
-def move_motors(speed1, speed2,m1,m2,m3,m4, buffer):
+def move_motors(speed_L, speed_R, L_front, L_back, R_front, R_back, buffer):
+    
+    L_front = tic_distance(L_front)
+    L_back = tic_distance(L_back)
+    R_front = tic_distance(R_front)
+    R_back = tic_distance(R_back)
+
     accel = 1000
     deccel = 1000
-    m1 = tic_distance(m1)
-    m2 = tic_distance(m2)
-    m3 = tic_distance(m3)
-    m4 = tic_distance(m4)
    
-    rcL.SpeedAccelDeccelPositionM1M2(left_side, accel, speed1, deccel, int(m1), accel, speed1, deccel, int(m2), buffer)
-    rcR.SpeedAccelDeccelPositionM1M2(right_side, accel, speed2, deccel, int(m3), accel, speed2, deccel, int(m4), buffer)
+    rcL.SpeedAccelDeccelPositionM1M2(left_side, accel, speed_L, deccel, int(L_front), accel, speed_L, deccel, int(L_back), buffer)
+    rcR.SpeedAccelDeccelPositionM1M2(right_side, accel, speed_R, deccel, int(R_front), accel, speed_R, deccel, int(R_back), buffer)
     
     # buffer 1 reading
     depth1 = np.uint8  
@@ -64,8 +65,7 @@ def move_motors(speed1, speed2,m1,m2,m3,m4, buffer):
         depth2 = rcR.ReadBuffers(right_side)
         time.sleep(0.01)
     
-    normalize_encoders()
-    show_encoder()
+    normalize_encoders()   
     
 def drive_straight(speed, distance, buffer):
     move_motors(speed, speed, distance, distance, distance, distance, buffer)
@@ -73,18 +73,33 @@ def drive_straight(speed, distance, buffer):
 def drive_stop():
     move_motors(0,0,0,0,0,0,0)
 
-# turn around back axle
+# turn centered around back wheel axle
 def turn_center(speed, angle, buffer):
     global current_heading
-    # inches
-    robot_width = 14
+    global current_position
+    # robot_length = 13.3
+    # turn_radius_offset = robot_length / 2
+    robot_width = 13.5
+
     turn_circumference = math.pi * robot_width
     distance = (angle/360.0) * turn_circumference
-    # move_motors(distance, distance, -1 * distance, -1 * distance)
     move_motors(speed, speed, -distance, -distance, distance, distance, buffer)
-    # drive_stop
     current_heading += angle
     normalize()
+
+    # account for position offset after turn
+    # rad_final_angle = (current_heading + angle) * math.pi / 180
+    # rad_init_angle = current_heading * math.pi / 180
+    # y_offset = turn_radius_offset * (math.sin(rad_final_angle) - math.sin(rad_init_angle))
+    # x_offset = turn_radius_offset * (math.cos(rad_final_angle) - math.cos(rad_init_angle))
+
+    # current_position[0] += x_offset
+    # current_position[1] += y_offset
+    
+    print("current position: " + str(current_position))
+    print("current heading: " + str(current_heading))
+    print("end turn center\n")
+
 
 # counter clockwise positve, 0 -> 180; 0 -> -180
 def turn_heading(speed, new_heading, buffer):
@@ -104,16 +119,17 @@ def turn_heading(speed, new_heading, buffer):
 def normalize():
     global current_heading
 
-    if current_heading > 180:
-        current_heading % 360
-    elif current_heading < -180:
-        current_heading % 360
-        current_heading *= -1
+    while current_heading > 180:
+        current_heading -= 360
+    while current_heading < -180:
+        current_heading += 360
 
 # drive relative to current position
 def drive_to_position(speed, x_dist, y_dist, face_angle):
     global current_position
     global current_heading
+
+    print("start drive to position")
     turn_angle = math.atan2(y_dist, x_dist) * (180/math.pi)
     print("turn angle: " + str(turn_angle))
     
@@ -144,6 +160,8 @@ def drive_to_position(speed, x_dist, y_dist, face_angle):
 def drive_to_location(speed, x_pos, y_pos, face_angle):
     global current_position
     global current_heading
+
+    print("start drive to location")
     # other tan acute angle
     target_heading = math.atan2(y_pos - current_position[1], x_pos - current_position[0]) * (180/math.pi)
     print("target heading: " + str(target_heading))
@@ -165,7 +183,7 @@ def drive_to_location(speed, x_pos, y_pos, face_angle):
     print("current heading: " + str(current_heading))
 
 
-    #(x (front back),y(left right)) 
+#(x (front back),y(left right)) 
 def add_waypoint(speed, x_pos, y_pos, face_angle):
     waypoint = [speed, x_pos, y_pos, face_angle]
     waypoints.append(waypoint)
@@ -187,24 +205,20 @@ def localize():
         print("next")
         waypoints.pop(0)
 
-        time.sleep(1)
+        time.sleep(0.1)
 
 tics_per_rev = 2442.96
 wheel_circumference = 4 * math.pi
 left_side = 0x81
 right_side = 0x80
-position = []
 waypoints = []
 active_opmode = True
 startup = True
 
 # use mid encoder normalize to prevent wrap around
-MIN_QUADRATURE_VALUE = np.uint
-MAX_QUADRATURE_VALUE = np.uint
-MID_QUADRATURE_VALUE = np.uint
-MIN_QUADRATURE_VALUE = 0
-MAX_QUADRATURE_VALUE = 500000
-MID_QUADRATURE_VALUE = int(MAX_QUADRATURE_VALUE/2)
+MIN_QUADRATURE_VALUE: np.uint = 0
+MAX_QUADRATURE_VALUE: np.uint = 500000
+MID_QUADRATURE_VALUE = np.uint = int(MAX_QUADRATURE_VALUE / 2)
 
 # absolute position and angle heading
 current_position = [0,0]
@@ -221,15 +235,19 @@ if active_opmode:
     # add_waypoint(2500, 30, -20, -100)
     # add_waypoint(2500, 0, 0, 0)
     # localize()
-    drive_to_position(4000, 0, 0, 90)    
-    # drive_to_position(3000, -10, 0, 0)
-    
-    show_encoder()
-    # drive_straight(1000, 15, 0)
-    # show_encoder()
+    # drive_to_position(2000, 0, 0, 90)     
 
-    # turn_center(7000, 90, 0)
+    # add_waypoint(10000, 40, 40, 0) 
+    # add_waypoint(10000, 60, 0, -90)
+    # add_waypoint(10000, 20, -10, -180)
+    # add_waypoint(10000, 0, 0, 0)
+    # localize()
+    drive_to_position(10000, 0, 0, -90)
     
+    
+
+    # turn_center(2000, 1000, 0)
+    # print(current_heading)
     active_opmode = False
       
 
