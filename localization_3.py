@@ -67,6 +67,9 @@ def move_motors(speed_L, speed_R, L_front, L_back, R_front, R_back, buffer):
 def drive_straight(speed, distance, buffer):
     move_motors(speed, speed, distance, distance, distance, distance, buffer)
 
+def drive_arc(speed_left, speed_right, distance_left, distance_right, buffer):
+    move_motors(speed_left, speed_right, distance_left, distance_right, buffer)
+
 def drive_stop():
     move_motors(0,0,0,0,0,0,0)
 
@@ -119,7 +122,8 @@ def normalize():
     while current_heading < -180:
         current_heading += 360
 
-
+def arc_to_position(x_pos, y_pos, face_angle):
+    
 
 # back track "movements" amount of locations
 def backtrack(speed, movements):

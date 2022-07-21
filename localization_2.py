@@ -93,9 +93,6 @@ def turn_center(speed, angle, buffer):
 
     # current_position[0] += x_offset
     # current_position[1] += y_offset
-    
-    print("current position: " + str(current_position))
-    print("current heading: " + str(current_heading))
 
 # counter clockwise positve, 0 -> 180; 0 -> -180
 def turn_heading(speed, new_heading, buffer):
@@ -121,6 +118,7 @@ def normalize():
         current_heading += 360
 
 # drive relative to current position
+@dispatch(int, int, int, int)
 def drive_to_position(speed, x_dist, y_dist, face_angle):
     global current_position
     global current_heading
@@ -153,10 +151,35 @@ def drive_to_position(speed, x_dist, y_dist, face_angle):
 
     print("current position: " + str(current_position))
     print("current heading: " + str(current_heading) + "\n")
+
+@dispatch(int, int, int)
+def drive_to_position(speed, x_dist, y_dist):
+    global current_position
+    global current_heading
+    global locations
+
+    print("start drive to position")
+    turn_angle = math.atan2(y_dist, x_dist) * (180/math.pi)
+    print("turn angle: " + str(turn_angle))
+    
+    turn_center(speed, turn_angle, 0)
+    
+    target_distance = math.sqrt(math.pow(x_dist, 2) + math.pow(y_dist, 2))
+    print("target distance: " + str(target_distance))
+    
+    drive_straight(speed, target_distance, 0)
+    
+    current_position[0] += x_dist
+    current_position[1] += y_dist
+
+    locations.append([current_position[0], current_position[1]])
+
+    print("current position: " + str(current_position))
+    print("current heading: " + str(current_heading) + "\n")
     
 
 # drive to absolute location; (x,y) plane
-# @dispatch(int, int, int, int)
+@dispatch(int, int, int, int)
 def drive_to_location(speed, x_pos, y_pos, face_angle):
     global current_position
     global current_heading
@@ -184,11 +207,12 @@ def drive_to_location(speed, x_pos, y_pos, face_angle):
     print("current position: " + str(current_position))
     print("current heading: " + str(current_heading) + "\n")
 
-def backtrack_to_location(speed, x_pos, y_pos):
+@dispatch(int, int, int)
+def drive_to_location(speed, x_pos, y_pos):
     global current_position
     global current_heading
 
-    print("start backtrack to location")
+    print("start drive to location")
     # other tan acute angle
     target_heading = math.atan2(y_pos - current_position[1], x_pos - current_position[0]) * (180/math.pi)
     print("target heading: " + str(target_heading))
@@ -211,25 +235,37 @@ def backtrack_to_location(speed, x_pos, y_pos):
 def backtrack(speed, movements):
     global locations
     locations_amount = len(locations)
+    has_face_angle = True
     last_face_angle = 0
 
     if movements == "all":
-        movements = 1
-
+        movements = locations_amount
+        print(movements)
+    
     while len(locations) > locations_amount - movements:
-        target_location = locations[len(locations)-2]
+        print("backtrack motion")
+        target_location = locations[len(locations)-1]
         x_pos = target_location[0]
         y_pos = target_location[1]
-        last_face_angle = target_location[2]
-
-        backtrack_to_location(speed, x_pos, y_pos)
+        try:
+            last_face_angle = target_location[2]
+            has_face_angle = True
+        except IndexError:
+            has_face_angle = False
+        drive_to_location(speed, x_pos, y_pos)
         locations.pop(len(locations)-1)
 
-    turn_heading(speed, last_face_angle, 0)
+    if has_face_angle:
+        turn_heading(speed, last_face_angle, 0)
 
 #(x (front back),y(left right)) 
+@dispatch(int, int, int, int)
 def add_waypoint(speed, x_pos, y_pos, face_angle):
     waypoint = [speed, x_pos, y_pos, face_angle]
+    waypoints.append(waypoint)
+@dispatch(int, int, int)
+def add_waypoint(speed, x_pos, y_pos):
+    waypoint = [speed, x_pos, y_pos]
     waypoints.append(waypoint)
 
 def localize():
@@ -242,10 +278,13 @@ def localize():
         speed = target_location[0]
         x_pos = target_location[1]
         y_pos = target_location[2]
-        face_angle = target_location[3]
 
-        drive_to_location(speed, x_pos, y_pos, face_angle)
-        
+        try:
+            face_angle = target_location[3]
+            drive_to_location(speed, x_pos, y_pos, face_angle)
+        except IndexError:
+            drive_to_location(speed, x_pos, y_pos)
+
         waypoints.pop(0)
 
         # time.sleep(0.1)
@@ -279,10 +318,11 @@ if active_opmode:
     
     # show_encoder()
     add_waypoint(7000, 20, -10, 120)
-    add_waypoint(7000, 30, -20, 0)
+    add_waypoint(7000, 30, -20)
     localize()
     drive_to_position(5000, 10, 0, 90)
-    backtrack(5000, 3)
+    drive_to_position(5000, 10, 10)
+    backtrack(5000, "all")
     # rcL.SpeedAccelDeccelPositionM1(left_side, 1000, 2000, 1000, 1000, 0)
 
     # add_waypoint(10000, 40, 40, 0) 
@@ -295,6 +335,8 @@ if active_opmode:
 
     # turn_center(2000, 1000, 0)
     # print(current_heading)
+    print("current position: " + str(current_position))
+    print("current heading: " + str(current_heading))
     active_opmode = False
       
 
