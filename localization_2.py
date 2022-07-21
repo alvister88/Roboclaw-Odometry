@@ -1,4 +1,3 @@
-from threading import Thread, current_thread
 from stringprep import in_table_a1
 import time
 import math
@@ -14,8 +13,6 @@ rcR = Roboclaw("/dev/ttyACM1", 115200)
 rcL.Open()
 rcR.Open()
 
-# test encoder method
-# testing
 
 def normalize_encoders():
     rcL.SetEncM1(left_side, MID_QUADRATURE_VALUE)
@@ -49,8 +46,8 @@ def move_motors(speed_L, speed_R, L_front, L_back, R_front, R_back, buffer):
     R_front = tic_distance(R_front)
     R_back = tic_distance(R_back)
 
-    accel = 1000
-    deccel = 1000
+    accel = 2000
+    deccel = 2000
    
     rcL.SpeedAccelDeccelPositionM1M2(left_side, accel, speed_L, deccel, int(L_front), accel, speed_L, deccel, int(L_back), buffer)
     rcR.SpeedAccelDeccelPositionM1M2(right_side, accel, speed_R, deccel, int(R_front), accel, speed_R, deccel, int(R_back), buffer)
@@ -98,8 +95,6 @@ def turn_center(speed, angle, buffer):
     
     print("current position: " + str(current_position))
     print("current heading: " + str(current_heading))
-    print("end turn center\n")
-
 
 # counter clockwise positve, 0 -> 180; 0 -> -180
 def turn_heading(speed, new_heading, buffer):
@@ -128,6 +123,7 @@ def normalize():
 def drive_to_position(speed, x_dist, y_dist, face_angle):
     global current_position
     global current_heading
+    global locations
 
     print("start drive to position")
     turn_angle = math.atan2(y_dist, x_dist) * (180/math.pi)
@@ -152,8 +148,10 @@ def drive_to_position(speed, x_dist, y_dist, face_angle):
     current_position[0] += x_dist
     current_position[1] += y_dist
 
+    locations.append([current_position[0], current_position[1], face_angle])
+
     print("current position: " + str(current_position))
-    print("current heading: " + str(current_heading))
+    print("current heading: " + str(current_heading) + "\n")
     
 
 # drive to absolute location; (x,y) plane
@@ -179,9 +177,49 @@ def drive_to_location(speed, x_pos, y_pos, face_angle):
     current_position[0] = x_pos
     current_position[1] = y_pos
 
-    print("current position: " + str(current_position))
-    print("current heading: " + str(current_heading))
+    locations.append([current_position[0], current_position[1], face_angle])
 
+    print("current position: " + str(current_position))
+    print("current heading: " + str(current_heading) + "\n")
+
+def backtrack_to_location(speed, x_pos, y_pos):
+    global current_position
+    global current_heading
+
+    print("start backtrack to location")
+    # other tan acute angle
+    target_heading = math.atan2(y_pos - current_position[1], x_pos - current_position[0]) * (180/math.pi)
+    print("target heading: " + str(target_heading))
+    
+    turn_heading(speed, target_heading, 0)
+
+    print("current heading: " + str(current_heading))
+    target_distance = math.sqrt(math.pow(x_pos - current_position[0], 2) + math.pow(y_pos - current_position[1], 2))
+    print("target distance: " + str(target_distance))
+    
+    drive_straight(speed, target_distance, 0)
+    
+    current_position[0] = x_pos
+    current_position[1] = y_pos
+
+    print("current position: " + str(current_position))
+    print("current heading: " + str(current_heading) + "\n")
+
+# back track "movements" amount of locations
+def backtrack(speed, movements):
+    global locations
+    locations_amount = len(locations)
+    last_face_angle = 0
+
+    while len(locations) > locations_amount - movements:
+        target_location = locations[len(locations)-2]
+        x_pos = target_location[0]
+        y_pos = target_location[1]
+        last_face_angle = target_location[2]
+
+        backtrack_to_location(speed, x_pos, y_pos)
+        locations.pop(len(locations)-1)
+    turn_heading(speed, last_face_angle, 0)
 
 #(x (front back),y(left right)) 
 def add_waypoint(speed, x_pos, y_pos, face_angle):
@@ -193,7 +231,7 @@ def localize():
     global current_position
     global current_heading
     
-    while(len(waypoints) != 0):
+    while len(waypoints) != 0:
         target_location = waypoints[0]
         speed = target_location[0]
         x_pos = target_location[1]
@@ -202,16 +240,16 @@ def localize():
 
         drive_to_location(speed, x_pos, y_pos, face_angle)
         
-        print("next")
         waypoints.pop(0)
 
-        time.sleep(0.1)
+        # time.sleep(0.1)
 
 tics_per_rev = 2442.96
 wheel_circumference = 4 * math.pi
 left_side = 0x81
 right_side = 0x80
 waypoints = []
+locations = []
 active_opmode = True
 startup = True
 
@@ -228,21 +266,24 @@ current_heading = 0
 while startup:
     if startup:
         normalize_encoders()
+        locations.append([0, 0, 0])
         startup = False
 
 if active_opmode:
-    # add_waypoint(2500, 20, -20, 90)
-    # add_waypoint(2500, 30, -20, -100)
-    # add_waypoint(2500, 0, 0, 0)
-    # localize()
-    # drive_to_position(2000, 0, 0, 90)     
+    
+    # show_encoder()
+    add_waypoint(7000, 20, -10, 120)
+    add_waypoint(7000, 30, -20, 0)
+    localize()
+    drive_to_position(5000, 10, 0, 90)
+    backtrack(5000, 3)
+    # rcL.SpeedAccelDeccelPositionM1(left_side, 1000, 2000, 1000, 1000, 0)
 
     # add_waypoint(10000, 40, 40, 0) 
     # add_waypoint(10000, 60, 0, -90)
     # add_waypoint(10000, 20, -10, -180)
     # add_waypoint(10000, 0, 0, 0)
     # localize()
-    drive_to_position(10000, 0, 0, -90)
     
     
 

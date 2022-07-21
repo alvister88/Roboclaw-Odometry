@@ -141,13 +141,13 @@ while startup:
         startup = False
 
 if active_opmode:
-    add_waypoint(2500, 20, -20, 90)
-    add_waypoint(2500, 32, -20, 30)
-    add_waypoint(2500, 0, 0, 0)
-    
+    # add_waypoint(2500, 20, -20, 90)
+    # add_waypoint(2500, 32, -20, 30)
+    # add_waypoint(2500, 0, 0, 0)
+    drive_straight(2000, 10, 0)
     # # add_waypoint(1000, 50, -20, 50)
     # # add_waypoint(700, 50, 0, 50)
-    localize()
+    # localize()
     # show_encoder()
     # drive_straight(1500, 15, 0)
     # show_encoder()
