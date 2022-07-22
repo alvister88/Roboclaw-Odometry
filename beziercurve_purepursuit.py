@@ -39,6 +39,17 @@ def show_encoder():
 def tic_distance(inches):
     return ((inches / wheel_circumference) * tics_per_rev)
 
+def motor_speed(speed_L, speed_R):
+    rcL.SpeedM1M2(left_side, speed_L, speed_L)
+    rcR.SpeedM1M2(right_side, speed_R, speed_R)
+
+# def drive_by_speed()
+
+def get_status():
+    left_pos = int(rcL.ReadEncM2(left_side)[1]) - MID_QUADRATURE_VALUE
+    right_pos = int(rcR.ReadEncM2(right_side)[1]) - MID_QUADRATURE_VALUE
+    return (left_pos, right_pos)
+
 # (tics/s, tics/s, inches, inches, inches, inches, (0 or 1))
 def move_motors(speed_L, speed_R, L_front, L_back, R_front, R_back, interval):
     
@@ -61,15 +72,21 @@ def move_motors(speed_L, speed_R, L_front, L_back, R_front, R_back, interval):
     while  depth1 != (1, left_side, left_side) and depth2 != (1, right_side, right_side):
         depth1 = rcL.ReadBuffers(left_side)
         depth2 = rcR.ReadBuffers(right_side)
-        time.sleep(0.01)
+        # time.sleep(0.01)
 
     time.sleep(interval)
-    
+
+   
 def drive_straight(speed, distance):
     move_motors(speed, speed, distance, distance, distance, distance)
 
-def drive_stop():
+def drive_stop(interval):
     move_motors(0,0,0,0,0,0,0)
+    time.sleep(interval)
+
+def motor_stop(interval):
+    motor_speed(0, 0)
+    time.sleep(interval)
 
 # turn centered around back wheel axle
 def turn_center(speed, angle):
@@ -108,61 +125,20 @@ def normalize():
     while current_heading < -180:
         current_heading += 360
 # def arc_to_position(x_pos, y_pos, face_angle):
-def arc_to_position():
-    drive_straight(4000, 25, 0)
-    drive_straight(4000, 10, 0)
-    # drive_straight(4000, 15, 0)
-    # turn_heading(4000, 180, 0)
 
-# back track "movements" amount of locations
-def backtrack(speed, movements):
-    global locations
-    locations_amount = len(locations)
-    has_face_angle = True
-    last_face_angle = 0
-
-    if movements == "all":
-        movements = locations_amount
-        print(movements)
+def generate_bezier_pathing(x_pos, y_pos, face_angle):
     
-    while len(locations) > locations_amount - movements:
-        print("backtrack motion")
-        target_location = locations[len(locations)-1]
-        x_pos = target_location[0]
-        y_pos = target_location[1]
-        try:
-            last_face_angle = target_location[2]
-            has_face_angle = True
-        except IndexError:
-            has_face_angle = False
-        drive_to_location(speed, x_pos, y_pos)
-        locations.pop(len(locations)-1)
-
-    if has_face_angle:
-        turn_heading(speed, last_face_angle, 0)
 
 #(x (front back),y(left right)) 
+@dispatch(int, int, int, int)
 def add_waypoint(speed, x_pos, y_pos, face_angle):
     waypoint = [speed, x_pos, y_pos, face_angle]
     waypoints.append(waypoint)
+@dispatch(int, int, int)
+def add_waypoint(speed, x_pos, y_pos):
+    waypoint = [speed, x_pos, y_pos]
+    waypoints.append(waypoint)
 
-def localize():
-    global waypoints
-    global current_position
-    global current_heading
-    
-    while len(waypoints) != 0:
-        target_location = waypoints[0]
-        speed = target_location[0]
-        x_pos = target_location[1]
-        y_pos = target_location[2]
-        face_angle = target_location[3]
-
-        drive_to_location(speed, x_pos, y_pos, face_angle)
-        
-        waypoints.pop(0)
-
-        # time.sleep(0.1)
 
 tics_per_rev = 2442.96
 wheel_circumference = 4 * math.pi
@@ -189,10 +165,20 @@ while startup:
     startup = False
 
 if active_opmode:
-    arc_to_position()
-    # show_encoder()
     
+    show_encoder()
+    motor_speed(3000, 3000)
+    time.sleep(3)
+    # motor_speed(1000, 1000)
+    # time.sleep(3)
+    motor_stop(1)
+
+    show_encoder()
+    time.sleep(1)
+    show_encoder()
     active_opmode = False
+    
+    
       
 
     

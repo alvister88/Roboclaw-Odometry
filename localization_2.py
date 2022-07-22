@@ -47,9 +47,9 @@ def move_motors(speed_L, speed_R, L_front, L_back, R_front, R_back, interval):
     R_front = tic_distance(R_front) + int(rcR.ReadEncM1(right_side)[1])
     R_back = tic_distance(R_back) + int(rcR.ReadEncM2(right_side)[1])
 
-    accel = 3000
-    deccel = 3000
-   
+    accel = 0
+    deccel = 0
+
     rcL.SpeedAccelDeccelPositionM1M2(left_side, accel, speed_L, deccel, int(L_front), accel, speed_L, deccel, int(L_back), 0)
     rcR.SpeedAccelDeccelPositionM1M2(right_side, accel, speed_R, deccel, int(R_front), accel, speed_R, deccel, int(R_back), 0)
 
@@ -63,13 +63,14 @@ def move_motors(speed_L, speed_R, L_front, L_back, R_front, R_back, interval):
         depth2 = rcR.ReadBuffers(right_side)
         # time.sleep(0.01)
 
-    time.sleep(0)
+    time.sleep(0.1)
     
 def drive_straight(speed, distance, interval):
     move_motors(speed, speed, distance, distance, distance, distance, interval)
 
-def drive_stop():
+def drive_stop(interval):
     move_motors(0,0,0,0,0,0,0)
+    time.sleep(interval)
 
 # turn centered around back wheel axle
 def turn_center(speed, angle, interval):
@@ -202,8 +203,6 @@ def drive_to_location(speed, x_pos, y_pos, face_angle):
     current_position[0] = x_pos
     current_position[1] = y_pos
 
-    locations.append([current_position[0], current_position[1], face_angle])
-
     print("current position: " + str(current_position))
     print("current heading: " + str(current_heading) + "\n")
 
@@ -244,6 +243,7 @@ def backtrack(speed, movements):
     
     while len(locations) > locations_amount - movements:
         print("backtrack motion")
+        print( locations[len(locations) - 1])
         target_location = locations[len(locations)-1]
         x_pos = target_location[0]
         y_pos = target_location[1]
@@ -263,10 +263,12 @@ def backtrack(speed, movements):
 def add_waypoint(speed, x_pos, y_pos, face_angle):
     waypoint = [speed, x_pos, y_pos, face_angle]
     waypoints.append(waypoint)
+    locations.append([x_pos, y_pos, face_angle])
 @dispatch(int, int, int)
 def add_waypoint(speed, x_pos, y_pos):
     waypoint = [speed, x_pos, y_pos]
     waypoints.append(waypoint)
+    locations.append([x_pos, y_pos])
 
 def localize():
     global waypoints
