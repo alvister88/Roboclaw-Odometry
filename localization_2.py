@@ -37,22 +37,22 @@ def show_encoder():
     print(tuple(np.subtract(encoderR2, (0, 250000, 0))))
 
 def tic_distance(inches):
-    return ((inches / wheel_circumference) * tics_per_rev) + MID_QUADRATURE_VALUE
+    return ((inches / wheel_circumference) * tics_per_rev)
 
 # (tics/s, tics/s, inches, inches, inches, inches, (0 or 1))
-def move_motors(speed_L, speed_R, L_front, L_back, R_front, R_back, buffer):
+def move_motors(speed_L, speed_R, L_front, L_back, R_front, R_back, interval):
     
-    L_front = tic_distance(L_front)
-    L_back = tic_distance(L_back)
-    R_front = tic_distance(R_front)
-    R_back = tic_distance(R_back)
+    L_front = tic_distance(L_front) + int(rcL.ReadEncM1(left_side)[1])
+    L_back = tic_distance(L_back) + int(rcL.ReadEncM2(left_side)[1])
+    R_front = tic_distance(R_front) + int(rcR.ReadEncM1(right_side)[1])
+    R_back = tic_distance(R_back) + int(rcR.ReadEncM2(right_side)[1])
 
-    accel = 2000
-    deccel = 2000
+    accel = 3000
+    deccel = 3000
    
-    rcL.SpeedAccelDeccelPositionM1M2(left_side, accel, speed_L, deccel, int(L_front), accel, speed_L, deccel, int(L_back), buffer)
-    rcR.SpeedAccelDeccelPositionM1M2(right_side, accel, speed_R, deccel, int(R_front), accel, speed_R, deccel, int(R_back), buffer)
-    
+    rcL.SpeedAccelDeccelPositionM1M2(left_side, accel, speed_L, deccel, int(L_front), accel, speed_L, deccel, int(L_back), 0)
+    rcR.SpeedAccelDeccelPositionM1M2(right_side, accel, speed_R, deccel, int(R_front), accel, speed_R, deccel, int(R_back), 0)
+
     # buffer 1 reading
     depth1 = np.uint8  
     # buffer 2 reading
@@ -61,18 +61,18 @@ def move_motors(speed_L, speed_R, L_front, L_back, R_front, R_back, buffer):
     while  depth1 != (1, left_side, left_side) and depth2 != (1, right_side, right_side):
         depth1 = rcL.ReadBuffers(left_side)
         depth2 = rcR.ReadBuffers(right_side)
-        time.sleep(0.01)
+        # time.sleep(0.01)
+
+    time.sleep(0)
     
-    normalize_encoders()   
-    
-def drive_straight(speed, distance, buffer):
-    move_motors(speed, speed, distance, distance, distance, distance, buffer)
+def drive_straight(speed, distance, interval):
+    move_motors(speed, speed, distance, distance, distance, distance, interval)
 
 def drive_stop():
     move_motors(0,0,0,0,0,0,0)
 
 # turn centered around back wheel axle
-def turn_center(speed, angle, buffer):
+def turn_center(speed, angle, interval):
     global current_heading
     global current_position
     # robot_length = 13.3
@@ -81,7 +81,7 @@ def turn_center(speed, angle, buffer):
 
     turn_circumference = math.pi * robot_width
     distance = (angle/360.0) * turn_circumference
-    move_motors(speed, speed, -distance, -distance, distance, distance, buffer)
+    move_motors(speed, speed, -distance, -distance, distance, distance, interval)
     current_heading += angle
     normalize()
 
@@ -95,7 +95,7 @@ def turn_center(speed, angle, buffer):
     # current_position[1] += y_offset
 
 # counter clockwise positve, 0 -> 180; 0 -> -180
-def turn_heading(speed, new_heading, buffer):
+def turn_heading(speed, new_heading, interval):
     global current_heading
     turn_angle = new_heading - current_heading
 
@@ -104,7 +104,7 @@ def turn_heading(speed, new_heading, buffer):
     elif turn_angle < -180:
         turn_angle += 360
 
-    turn_center(speed, turn_angle, buffer)
+    turn_center(speed, turn_angle, interval)
     current_heading = new_heading
     normalize()
 
@@ -323,14 +323,13 @@ if active_opmode:
     drive_to_position(5000, 10, 0, 90)
     drive_to_position(5000, 10, 10)
     backtrack(5000, "all")
-    # rcL.SpeedAccelDeccelPositionM1(left_side, 1000, 2000, 1000, 1000, 0)
 
     # add_waypoint(10000, 40, 40, 0) 
     # add_waypoint(10000, 60, 0, -90)
     # add_waypoint(10000, 20, -10, -180)
     # add_waypoint(10000, 0, 0, 0)
     # localize()
-    
+    # turn_center(4000, 360, 0)
     
 
     # turn_center(2000, 1000, 0)
