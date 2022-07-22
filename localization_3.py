@@ -118,21 +118,28 @@ def arc_to_position():
 def backtrack(speed, movements):
     global locations
     locations_amount = len(locations)
+    has_face_angle = True
     last_face_angle = 0
 
     if movements == "all":
-        movements = 1
-        
+        movements = locations_amount
+        print(movements)
+    
     while len(locations) > locations_amount - movements:
-        target_location = locations[len(locations)-2]
+        print("backtrack motion")
+        target_location = locations[len(locations)-1]
         x_pos = target_location[0]
         y_pos = target_location[1]
-        last_face_angle = target_location[2]
-
-        backtrack_to_location(speed, x_pos, y_pos)
+        try:
+            last_face_angle = target_location[2]
+            has_face_angle = True
+        except IndexError:
+            has_face_angle = False
+        drive_to_location(speed, x_pos, y_pos)
         locations.pop(len(locations)-1)
 
-    turn_heading(speed, last_face_angle, 0)
+    if has_face_angle:
+        turn_heading(speed, last_face_angle, 0)
 
 #(x (front back),y(left right)) 
 def add_waypoint(speed, x_pos, y_pos, face_angle):
