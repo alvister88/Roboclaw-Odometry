@@ -126,7 +126,41 @@ def normalize():
         current_heading += 360
 # def arc_to_position(x_pos, y_pos, face_angle):
 
-def generate_bezier_pathing(x_pos, y_pos, face_angle):
+def generate_bezier_pathing(x_pos, y_pos, face_angle, curve_radius):
+    start_point = current_position
+    end_point = [x_pos, y_pos]
+    start_angle = current_heading
+    end_angle = face_angle
+    #  not actually a curvature radius but it scales how much curve there is
+    curvature = curve_radius
+    # projected along the start angle vector
+    start_projection = np.add(start_point, np.muliply([math.cos(start_angle), math.sin(start_angle)], curvature))
+    # projected opposite of the end angle vector
+    end_projection = np.subtract(end_point, np.muliply([math.cos(end_angle), math.sin(end_angle)], curvature))
+    
+    curve_length = arc_length(start_point, start_projection, end_point, end_projection)
+
+    
+    
+
+    
+
+def arc_length(start_point, start_projection, end_point, end_projection):
+    x_dist = (float(end_point[0] - start_point[0])) / 100.0
+    z = 0.0
+    length = 0.0
+    points = []
+    for i in range(100):
+        val1 = np.multiply(start_point, math.pow((1-z), 3)) 
+        val2 = 3 * np.multiply(np.multiply(start_projection, z), math.pow(1-z, 2))
+        val3 = 3 * np.multiply(np.multiply(end_projection, math.pow(z, 2)), 1-z)
+        val4 = np.multiply(end_point, math.pow(z, 3))
+
+        points[i] = np.add(val1, val2, val3, val4)
+        if i > 0:
+            length += math.sqrt(math.pow((points[i][0] - points[i-1][0]), 2) + math.pow((points[i][1] - points[i-1][1]), 2))
+        z += x_dist
+    return length
     
 
 #(x (front back),y(left right)) 

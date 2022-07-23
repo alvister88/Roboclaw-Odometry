@@ -119,7 +119,7 @@ def normalize():
         current_heading += 360
 
 # drive relative to current position
-@dispatch(int, int, int, int)
+@dispatch(float, float, float, float)
 def drive_to_position(speed, x_dist, y_dist, face_angle):
     global current_position
     global current_heading
@@ -153,7 +153,7 @@ def drive_to_position(speed, x_dist, y_dist, face_angle):
     print("current position: " + str(current_position))
     print("current heading: " + str(current_heading) + "\n")
 
-@dispatch(int, int, int)
+@dispatch(float, float, float)
 def drive_to_position(speed, x_dist, y_dist):
     global current_position
     global current_heading
@@ -180,7 +180,7 @@ def drive_to_position(speed, x_dist, y_dist):
     
 
 # drive to absolute location; (x,y) plane
-@dispatch(int, int, int, int)
+@dispatch(float, float, float, float)
 def drive_to_location(speed, x_pos, y_pos, face_angle):
     global current_position
     global current_heading
@@ -206,7 +206,7 @@ def drive_to_location(speed, x_pos, y_pos, face_angle):
     print("current position: " + str(current_position))
     print("current heading: " + str(current_heading) + "\n")
 
-@dispatch(int, int, int)
+@dispatch(float, float, float)
 def drive_to_location(speed, x_pos, y_pos):
     global current_position
     global current_heading
@@ -259,12 +259,12 @@ def backtrack(speed, movements):
         turn_heading(speed, last_face_angle, 0)
 
 #(x (front back),y(left right)) 
-@dispatch(int, int, int, int)
+@dispatch(float, float, float, float)
 def add_waypoint(speed, x_pos, y_pos, face_angle):
     waypoint = [speed, x_pos, y_pos, face_angle]
     waypoints.append(waypoint)
     locations.append([x_pos, y_pos, face_angle])
-@dispatch(int, int, int)
+@dispatch(float, float, float)
 def add_waypoint(speed, x_pos, y_pos):
     waypoint = [speed, x_pos, y_pos]
     waypoints.append(waypoint)
