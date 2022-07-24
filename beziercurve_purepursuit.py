@@ -124,43 +124,75 @@ def normalize():
         current_heading -= 360
     while current_heading < -180:
         current_heading += 360
+  
+def to_radians(angle):      
+    return angle * math.pi / 180
+  
+def generate_relative_bezier_pathing(x_dist, y_dist, angle, curve_radius):
+    global current_position
+    global current_heading
+    x_pos = current_position[0] + x_dist
+    y_pos = current_position[1] + y_dist
+    current_heading += angle
+    generate_bezier_pathing(x_pos, y_pos, current_heading, curve_radius)
+  
+
+"""
+may convert everything to tics for greater resolution in calculations
+"""      
+
 # def arc_to_position(x_pos, y_pos, face_angle):
-
 def generate_bezier_pathing(x_pos, y_pos, face_angle, curve_radius):
-    start_point = current_position
-    end_point = [x_pos, y_pos]
-    start_angle = current_heading
-    end_angle = face_angle
-    #  not actually a curvature radius but it scales how much curve there is
-    curvature = curve_radius
+    global current_position
+    global current_heading
+    current_position = [x_pos, y_pos]
+    current_heading = face_angle
+    end_point = (x_pos, y_pos)
+    end_angle = to_radians(face_angle)
+    
+    curve_length = get_curve_length(end_point, end_angle, curve_radius)
+    # ideal inches between 2 waypoints
+    point_interval = 2.0
+    # prevent uneven distance between 2 waypoints
+    true_point_interval = curve_length / int(curve_length/point_interval)
+    amt_waypoints = int(curve_length / true_point_interval)
+    print(true_point_interval)
+    print(amt_waypoints)
+   
+def get_curve_length(end, end_angle, curvature):
+    theta1 = to_radians(current_heading)
+    theta2 = end_angle
+    p1 = current_position
     # projected along the start angle vector
-    start_projection = np.add(start_point, np.muliply([math.cos(start_angle), math.sin(start_angle)], curvature))
+    p2 = (current_position[0] + curvature * math.cos(theta1), current_position[1] + curvature * math.sin(theta1))
     # projected opposite of the end angle vector
-    end_projection = np.subtract(end_point, np.muliply([math.cos(end_angle), math.sin(end_angle)], curvature))
-    
-    curve_length = arc_length(start_point, start_projection, end_point, end_projection)
+    p3 = (end[0] - curvature * math.cos(theta2), end[1] - curvature * math.sin(theta2))
+    p4 = end
 
-    
-    
+    def bezier(t):
+        not_t = 1 - t
+        x_val = not_t**3 * p1[0]
+        x_val += 3 * not_t**2 * t * p2[0]
+        x_val += 3 * not_t * t**2 * p3[0]
+        x_val += t**3 * p4[0]
 
-    
+        y_val = not_t**3 * p1[1]
+        y_val += 3 * not_t**2 * t * p2[1]
+        y_val += 3 * not_t * t**2 * p3[1]
+        y_val += t**3 * p4[1]
 
-def arc_length(start_point, start_projection, end_point, end_projection):
-    x_dist = (float(end_point[0] - start_point[0])) / 100.0
-    z = 0.0
-    length = 0.0
-    points = []
-    for i in range(100):
-        val1 = np.multiply(start_point, math.pow((1-z), 3)) 
-        val2 = 3 * np.multiply(np.multiply(start_projection, z), math.pow(1-z, 2))
-        val3 = 3 * np.multiply(np.multiply(end_projection, math.pow(z, 2)), 1-z)
-        val4 = np.multiply(end_point, math.pow(z, 3))
+        return (x_val, y_val)
+    intervals = 750
+    dist = 0
+    for i in range(intervals):
+        p69 = bezier(i / intervals)
+        p70 = bezier((i + 1) / intervals)
+        dx = p70[0] - p69[0]
+        dy = p70[1] - p69[1]
+        dist += math.sqrt(dx * dx + dy * dy)
 
-        points[i] = np.add(val1, val2, val3, val4)
-        if i > 0:
-            length += math.sqrt(math.pow((points[i][0] - points[i-1][0]), 2) + math.pow((points[i][1] - points[i-1][1]), 2))
-        z += x_dist
-    return length
+    print(dist)
+    return dist
     
 
 #(x (front back),y(left right)) 
@@ -200,16 +232,7 @@ while startup:
 
 if active_opmode:
     
-    show_encoder()
-    motor_speed(3000, 3000)
-    time.sleep(3)
-    # motor_speed(1000, 1000)
-    # time.sleep(3)
-    motor_stop(1)
-
-    show_encoder()
-    time.sleep(1)
-    show_encoder()
+    generate_bezier_pathing()
     active_opmode = False
     
     
