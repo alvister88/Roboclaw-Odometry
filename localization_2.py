@@ -244,7 +244,7 @@ def backtrack(speed, movements):
     while len(locations) > locations_amount - movements:
         print("backtrack motion")
         print( locations[len(locations) - 1])
-        target_location = locations[len(locations)-1]
+        target_location = locations[len(locations) - 1]
         x_pos = target_location[0]
         y_pos = target_location[1]
         try:
