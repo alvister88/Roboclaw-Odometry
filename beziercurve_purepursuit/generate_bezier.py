@@ -4,30 +4,26 @@ import api_controller as api
 
 
 def generate_relative_bezier_pathing(x_dist, y_dist, angle, curve_radius):
-    global current_position
-    global current_heading
-    x_pos = current_position[0] + x_dist
-    y_pos = current_position[1] + y_dist
-    face_angle = current_heading + angle
+    x_pos = api.current_position[0] + x_dist
+    y_pos = api.current_position[1] + y_dist
+    face_angle = api.current_heading + angle
   
     generate_bezier_pathing(x_pos, y_pos, face_angle, curve_radius)
 
 def generate_bezier_pathing(x_pos, y_pos, face_angle, curvature):
-    global current_position
-    global current_heading
     # generated waypoints for curve
     
     waypoints = []
     end_point = (float(x_pos), float(y_pos))
     end_angle = api.to_radians(face_angle)
 
-    theta1 = api.to_radians(current_heading)
+    theta1 = api.to_radians(api.current_heading)
     theta2 = end_angle
 
-    p1 = current_position
+    p1 = api.current_position
     # projected along the start angle vector
-    p2 = (current_position[0] + curvature * math.cos(theta1),
-          current_position[1] + curvature * math.sin(theta1))
+    p2 = (api.current_position[0] + curvature * math.cos(theta1),
+          api.current_position[1] + curvature * math.sin(theta1))
     # projected opposite of the end angle vector
     p3 = (end_point[0] - curvature * math.cos(theta2),
           end_point[1] - curvature * math.sin(theta2))
@@ -69,8 +65,8 @@ def generate_bezier_pathing(x_pos, y_pos, face_angle, curvature):
     print(true_point_interval)
     print(amt_waypoints)
 
-    current_position = [x_pos, y_pos]
-    current_heading = face_angle
+    api.current_position = [x_pos, y_pos]
+    api.current_heading = face_angle
     api.normalize()
   
     def generate_waypoints():

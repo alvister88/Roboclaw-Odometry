@@ -20,7 +20,7 @@ while startup:
 
 if active_opmode:
     pathing = gb.generate_bezier_pathing(20, 20, 90, 11)
-    
-    print(pathing)
+    print("")
+    pathing2 = gb.generate_relative_bezier_pathing(10, 10, 0, 13)
     active_opmode = False
     
