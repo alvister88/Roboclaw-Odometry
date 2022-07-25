@@ -7,7 +7,7 @@ from roboclaw_3 import Roboclaw
 from multipledispatch import dispatch
 
 # Alvin's attempt at python localization x:)
-
+# updated
 #Linux comport name
 rcL = Roboclaw("/dev/ttyACM0", 115200)
 rcR = Roboclaw("/dev/ttyACM1", 115200)
@@ -133,41 +133,34 @@ def generate_relative_bezier_pathing(x_dist, y_dist, angle, curve_radius):
     global current_heading
     x_pos = current_position[0] + x_dist
     y_pos = current_position[1] + y_dist
-    current_heading += angle
-    generate_bezier_pathing(x_pos, y_pos, current_heading, curve_radius)
+    face_angle = current_heading + angle
   
+    generate_bezier_pathing(x_pos, y_pos, face_angle, curve_radius)
 
 """
 may convert everything to tics for greater resolution in calculations
 """      
 
 # def arc_to_position(x_pos, y_pos, face_angle):
-def generate_bezier_pathing(x_pos, y_pos, face_angle, curve_radius):
+def generate_bezier_pathing(x_pos, y_pos, face_angle, curvature):
     global current_position
     global current_heading
-    current_position = [x_pos, y_pos]
-    current_heading = face_angle
+    # generated waypoints for curve
+    waypoints = []
     end_point = (x_pos, y_pos)
     end_angle = to_radians(face_angle)
-    
-    curve_length = get_curve_length(end_point, end_angle, curve_radius)
-    # ideal inches between 2 waypoints
-    point_interval = 2.0
-    # prevent uneven distance between 2 waypoints
-    true_point_interval = curve_length / int(curve_length/point_interval)
-    amt_waypoints = int(curve_length / true_point_interval)
-    print(true_point_interval)
-    print(amt_waypoints)
-   
-def get_curve_length(end, end_angle, curvature):
+
     theta1 = to_radians(current_heading)
     theta2 = end_angle
+
     p1 = current_position
     # projected along the start angle vector
-    p2 = (current_position[0] + curvature * math.cos(theta1), current_position[1] + curvature * math.sin(theta1))
+    p2 = (current_position[0] + curvature * math.cos(theta1),
+          current_position[1] + curvature * math.sin(theta1))
     # projected opposite of the end angle vector
-    p3 = (end[0] - curvature * math.cos(theta2), end[1] - curvature * math.sin(theta2))
-    p4 = end
+    p3 = (end_point[0] - curvature * math.cos(theta2),
+          end_point[1] - curvature * math.sin(theta2))
+    p4 = end_point
 
     def bezier(t):
         not_t = 1 - t
@@ -182,18 +175,44 @@ def get_curve_length(end, end_angle, curvature):
         y_val += t**3 * p4[1]
 
         return (x_val, y_val)
-    intervals = 750
-    dist = 0
-    for i in range(intervals):
-        p69 = bezier(i / intervals)
-        p70 = bezier((i + 1) / intervals)
-        dx = p70[0] - p69[0]
-        dy = p70[1] - p69[1]
-        dist += math.sqrt(dx * dx + dy * dy)
 
-    print(dist)
-    return dist
-    
+    def get_curve_length(end, end_angle, curvature):
+        intervals = 750
+        dist = 0
+        for i in range(intervals):
+            p69 = bezier(i / intervals)
+            p70 = bezier((i + 1) / intervals)
+            dx = p70[0] - p69[0]
+            dy = p70[1] - p69[1]
+            dist += math.sqrt(dx * dx + dy * dy)
+
+        print(dist)
+        return dist
+
+    curve_length = get_curve_length(end_point, end_angle, curvature)
+    # ideal inches between 2 waypoints
+    point_interval = 2.0
+    # prevent uneven distance between 2 waypoints
+    true_point_interval = curve_length / int(curve_length / point_interval)
+    amt_waypoints = int(curve_length / true_point_interval)
+    print(true_point_interval)
+    print(amt_waypoints)
+
+    current_position = [x_pos, y_pos]
+    current_heading = face_angle
+    normalize()
+  
+    def generate_waypoints():
+        for t in range(amt_waypoints):
+            waypoint = bezier(t / (amt_waypoints))
+            waypoints.append(waypoint)
+            print(waypoint)
+        waypoints.append(end_point)
+        print(end_point)
+
+    return generate_waypoints()
+  
+   
 
 #(x (front back),y(left right)) 
 @dispatch(int, int, int, int)
