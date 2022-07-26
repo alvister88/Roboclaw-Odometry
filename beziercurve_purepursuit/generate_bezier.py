@@ -3,6 +3,9 @@ import time
 import api_controller as api
 
 
+def to_radians(angle):      
+    return angle * math.pi / 180
+
 def generate_relative_bezier_pathing(x_dist, y_dist, angle, curve_radius):
     x_pos = api.current_position[0] + x_dist
     y_pos = api.current_position[1] + y_dist
@@ -13,11 +16,12 @@ def generate_relative_bezier_pathing(x_dist, y_dist, angle, curve_radius):
 def generate_bezier_pathing(x_pos, y_pos, face_angle, curvature):
     # generated waypoints for curve
     
-    waypoints = []
+    x_waypoints = []
+    y_waypoints = []
     end_point = (float(x_pos), float(y_pos))
-    end_angle = api.to_radians(face_angle)
+    end_angle = to_radians(face_angle)
 
-    theta1 = api.to_radians(api.current_heading)
+    theta1 = to_radians(api.current_heading)
     theta2 = end_angle
 
     p1 = api.current_position
@@ -71,13 +75,18 @@ def generate_bezier_pathing(x_pos, y_pos, face_angle, curvature):
   
     def generate_waypoints():
         for t in range(1, amt_waypoints):
-            waypoint = bezier(t / (amt_waypoints))
-            waypoints.append(waypoint)
-            print(waypoint)
-        waypoints.append(end_point)
+            x = bezier(t / (amt_waypoints))[0]
+            y = bezier(t / (amt_waypoints))[1]
+            x_waypoints.append(x)
+            y_waypoints.append(y)
+            print("(" + str(x) + ", " + str(y) + ")")
+            # print(x, end = ", ")
+            # print(y, end = ", ")
+        x_waypoints.append(end_point[0])
+        y_waypoints.append(end_point[1])
         print(end_point)
 
     generate_waypoints()
 
-    return waypoints
+    return x_waypoints, y_waypoints
   

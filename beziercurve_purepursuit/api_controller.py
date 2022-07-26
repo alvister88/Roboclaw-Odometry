@@ -24,9 +24,6 @@ right_side = 0x80
 waypoints = []
 locations = []
 
-start_time = time.time()
-time_interval = 0
-elapsed_time = 0
 
 # use mid encoder normalize to prevent wrap around
 MIN_QUADRATURE_VALUE: np.uint = 0
@@ -81,12 +78,12 @@ def motor_speed(speed_L, speed_R):
 
 # def drive_by_speed()
 
-def status_update():
-    global time_interval
-    global elapsed_time
+# def status_update():
+#     global time_interval
+#     global elapsed_time
 
-    elapsed_time = time.time() - start_time
-    time_interval = elapsed_time - time_interval
+#     elapsed_time = time.time() - start_time
+#     time_interval = elapsed_time - time_interval
 
 def get_status():
     left_pos = int(rcL.ReadEncM2(left_side)[1]) - MID_QUADRATURE_VALUE

@@ -3,6 +3,7 @@ import numpy as np
 import math
 import time
 import api_controller as api
+import generate_bezier as gb
 
 
 # Parameters
@@ -16,6 +17,12 @@ start_time = time.time()
 time_interval = 0
 elapsed_time = 0
 
+def status_update():
+    global time_interval
+    global elapsed_time
+
+    elapsed_time = time.time() - start_time
+    time_interval = elapsed_time - time_interval
 
 
 class State:
@@ -128,10 +135,10 @@ def pure_pursuit_steer_control(state, trajectory, pind):
 
 
 
-def run():
+def run(x_list, y_list):
     #  target course
-    cx = np.arange(0, 50, 0.5)
-    cy = [math.sin(ix / 5.0) * ix / 2.0 for ix in cx]
+    cx = x_list
+    cy = y_list
 
     target_speed = 10.0 / 3.6  # [m/s]
 
@@ -163,6 +170,11 @@ def run():
         
     # Test
     assert lastIndex >= target_ind, "Cannot goal"
+
+def to_waypoint(x_pos, y_pos, face_angle, curvature):
+    x_list, y_list = gb.generate_bezier_pathing(x_pos, y_pos, face_angle, curvature)
+
+    run(x_list, y_list)
 
 
 
