@@ -12,7 +12,7 @@ from multipledispatch import dispatch
 #Linux comport name
 rcL = Roboclaw("/dev/ttyACM0", 115200)
 rcR = Roboclaw("/dev/ttyACM1", 115200)
-rcL.Open()
+rcL.Open() 
 rcR.Open()
 
 # global variables----------------------------------------------

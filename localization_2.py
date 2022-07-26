@@ -5,6 +5,7 @@ from tracemalloc import stop
 import numpy as np
 from roboclaw_3 import Roboclaw
 from multipledispatch import dispatch
+from numbers import Number
 
 # Alvin's attempt at python localization x:)
 
@@ -47,8 +48,8 @@ def move_motors(speed_L, speed_R, L_front, L_back, R_front, R_back, interval):
     R_front = tic_distance(R_front) + int(rcR.ReadEncM1(right_side)[1])
     R_back = tic_distance(R_back) + int(rcR.ReadEncM2(right_side)[1])
 
-    accel = 0
-    deccel = 0
+    accel = 3000
+    deccel = 3000
 
     rcL.SpeedAccelDeccelPositionM1M2(left_side, accel, speed_L, deccel, int(L_front), accel, speed_L, deccel, int(L_back), 0)
     rcR.SpeedAccelDeccelPositionM1M2(right_side, accel, speed_R, deccel, int(R_front), accel, speed_R, deccel, int(R_back), 0)
@@ -119,7 +120,7 @@ def normalize():
         current_heading += 360
 
 # drive relative to current position
-@dispatch(float, float, float, float)
+@dispatch(Number, Number, Number, Number)
 def drive_to_position(speed, x_dist, y_dist, face_angle):
     global current_position
     global current_heading
@@ -153,7 +154,7 @@ def drive_to_position(speed, x_dist, y_dist, face_angle):
     print("current position: " + str(current_position))
     print("current heading: " + str(current_heading) + "\n")
 
-@dispatch(float, float, float)
+@dispatch(Number, Number, Number)
 def drive_to_position(speed, x_dist, y_dist):
     global current_position
     global current_heading
@@ -180,7 +181,7 @@ def drive_to_position(speed, x_dist, y_dist):
     
 
 # drive to absolute location; (x,y) plane
-@dispatch(float, float, float, float)
+@dispatch(Number, Number, Number, Number)
 def drive_to_location(speed, x_pos, y_pos, face_angle):
     global current_position
     global current_heading
@@ -206,7 +207,7 @@ def drive_to_location(speed, x_pos, y_pos, face_angle):
     print("current position: " + str(current_position))
     print("current heading: " + str(current_heading) + "\n")
 
-@dispatch(float, float, float)
+@dispatch(Number, Number, Number)
 def drive_to_location(speed, x_pos, y_pos):
     global current_position
     global current_heading
@@ -243,8 +244,8 @@ def backtrack(speed, movements):
     
     while len(locations) > locations_amount - movements:
         print("backtrack motion")
-        print( locations[len(locations) - 1])
-        target_location = locations[len(locations) - 1]
+        # print( locations[len(locations) - 1])
+        target_location = locations[len(locations)-1]
         x_pos = target_location[0]
         y_pos = target_location[1]
         try:
@@ -259,12 +260,12 @@ def backtrack(speed, movements):
         turn_heading(speed, last_face_angle, 0)
 
 #(x (front back),y(left right)) 
-@dispatch(float, float, float, float)
+@dispatch(Number, Number, Number, Number)
 def add_waypoint(speed, x_pos, y_pos, face_angle):
     waypoint = [speed, x_pos, y_pos, face_angle]
     waypoints.append(waypoint)
     locations.append([x_pos, y_pos, face_angle])
-@dispatch(float, float, float)
+@dispatch(Number, Number, Number)
 def add_waypoint(speed, x_pos, y_pos):
     waypoint = [speed, x_pos, y_pos]
     waypoints.append(waypoint)
