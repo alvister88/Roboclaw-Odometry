@@ -19,6 +19,7 @@ rcR.Open()
 
 tics_per_rev = 2442.96
 wheel_circumference = 4 * math.pi
+robot_width = 13.5
 left_side = 0x81
 right_side = 0x80
 waypoints = []
@@ -42,7 +43,9 @@ def normalize_encoders():
     rcR.SetEncM1(right_side, MID_QUADRATURE_VALUE)
     rcR.SetEncM2(right_side, MID_QUADRATURE_VALUE)
 
-
+def read_encoders():
+    return rcL.ReadEncM2(left_side), rcR.ReadEncM2(right_side)
+    
 def show_encoder():
     # left front
     encoderL1 = rcL.ReadEncM1(left_side)
@@ -60,6 +63,9 @@ def show_encoder():
 
 def tic_distance(inches):
     return ((inches / wheel_circumference) * tics_per_rev)
+
+def inch_distance(tics):
+    return ((tics * wheel_circumference) / tics_per_rev)
 
 def normalize():
     global current_heading
@@ -130,7 +136,6 @@ def turn_center(speed, angle):
     global current_position
     # robot_length = 13.3
     # turn_radius_offset = robot_length / 2
-    robot_width = 13.5
 
     turn_circumference = math.pi * robot_width
     distance = (angle/360.0) * turn_circumference
