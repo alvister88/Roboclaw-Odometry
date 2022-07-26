@@ -3,7 +3,9 @@ import numpy as np
 import math
 import time
 import api_controller as api
+from beziercurve_purepursuit.api_controller import motor_speed
 import generate_bezier as gb
+
 
 
 # Parameters
@@ -17,12 +19,17 @@ start_time = time.time()
 time_interval = 0
 elapsed_time = 0
 
+
+
+
 def status_update():
     global time_interval
     global elapsed_time
 
     elapsed_time = time.time() - start_time
     time_interval = elapsed_time - time_interval
+    
+    
 
 
 class State:
@@ -35,13 +42,13 @@ class State:
         self.rear_x = self.x - ((WB / 2) * math.cos(self.yaw))
         self.rear_y = self.y - ((WB / 2) * math.sin(self.yaw))
 
-    def update(self, a, delta):
-        self.x += self.v * math.cos(self.yaw) * dt
-        self.y += self.v * math.sin(self.yaw) * dt
-        self.yaw += self.v / WB * math.tan(delta) * dt
-        self.v += a * dt
-        self.rear_x = self.x - ((WB / 2) * math.cos(self.yaw))
-        self.rear_y = self.y - ((WB / 2) * math.sin(self.yaw))
+    # def update(self, a, delta):
+    #     self.x += self.v * math.cos(self.yaw) * dt
+    #     self.y += self.v * math.sin(self.yaw) * dt
+    #     self.yaw += self.v / WB * math.tan(delta) * dt
+    #     self.v += a * dt
+    #     self.rear_x = self.x - ((WB / 2) * math.cos(self.yaw))
+    #     self.rear_y = self.y - ((WB / 2) * math.sin(self.yaw))
 
     def calc_distance(self, point_x, point_y):
         dx = self.rear_x - point_x
@@ -142,8 +149,6 @@ def run(x_list, y_list):
 
     target_speed = 10.0 / 3.6  # [m/s]
 
-    T = 100.0  # max simulation time
-
     # initial state
     state = State(x=-0.0, y=0.0, yaw=0.0, v=0.0)
 
@@ -154,17 +159,16 @@ def run(x_list, y_list):
     target_course = TargetCourse(cx, cy)
     target_ind, _ = target_course.search_target_index(state)
 
-    while T >= time and lastIndex > target_ind:
+    while lastIndex > target_ind:
 
         # Calc control input
         ai = proportional_control(target_speed, state.v)
         di, target_ind = pure_pursuit_steer_control(
             state, target_course, target_ind)
 
-        #car.move(ai,di)
+        api.motor_speed( , )
         state.update(ai, di)  # Control vehicle
 
-        time += dt
         states.append(time, state)
 
         
