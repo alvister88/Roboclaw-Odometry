@@ -13,25 +13,9 @@ import api_controller as api
 
 active_opmode = True
 startup = True
+run_thread = True
 
-# true position thread
-def threaded_function():
-    while active_opmode:
-        left_tics, right_tics = api.read_encoders()
-        left = api.inch_distance(left_tics)
-        right = api.inch_distance(right_tics)
-        theta = (right - left) / api.robot_width
-        radius = (right / theta) - (api.robot_width / 2)
-        
-        rad_final_angle = (api.current_heading) * math.pi / 180 + theta
-        rad_init_angle = api.current_heading * math.pi / 180
-        
-        # x position
-        api.current_position[0] = radius * (math.cos(rad_final_angle) - math.cos(rad_init_angle))
-        # y position
-        api.current_position[1] = radius * (math.sin(rad_final_angle) - math.sin(rad_init_angle))
-        time.sleep(0.01)
-        print("running")
+
 
 
 while startup:
@@ -39,11 +23,13 @@ while startup:
     api.locations.append([0, 0, 0])
     startup = False
 
-if active_opmode:
-    true_position = Thread(target = threaded_function)
-    true_position.start()
+if active_opmode:    
+
+    api.motor_speed(0, 0)
     
-    time.sleep(1)
-    
+    print(api.current_position)
+    print(api.current_heading)
     active_opmode = False
+
+
     

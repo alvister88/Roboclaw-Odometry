@@ -25,15 +25,15 @@ right_side = 0x80
 waypoints = []
 locations = []
 
-
 # use mid encoder normalize to prevent wrap around
 MIN_QUADRATURE_VALUE: np.uint = 0
 MAX_QUADRATURE_VALUE: np.uint = 500000
 MID_QUADRATURE_VALUE = np.uint = int(MAX_QUADRATURE_VALUE / 2)
 
 # absolute position and angle heading
-current_position = [0,0]
-current_heading = 0
+current_position = [0.0,0.0]
+# current heading in radians
+current_heading = 0.0
 
 # ----------------------------------------------------------------
 
@@ -44,7 +44,7 @@ def normalize_encoders():
     rcR.SetEncM2(right_side, MID_QUADRATURE_VALUE)
 
 def read_encoders():
-    return rcL.ReadEncM2(left_side), rcR.ReadEncM2(right_side)
+    return float(rcL.ReadEncM2(left_side)[1]) - MID_QUADRATURE_VALUE, float(rcR.ReadEncM2(right_side)[1]) - MID_QUADRATURE_VALUE
     
 def show_encoder():
     # left front
@@ -74,6 +74,14 @@ def normalize():
         current_heading -= 360
     while current_heading < -180:
         current_heading += 360
+
+def normalize_radians():
+    global current_heading
+
+    while current_heading > math.pi:
+        current_heading -= 2 * math.pi
+    while current_heading < -math.pi:
+        current_heading += 2 * math.pi
   
 def to_radians(angle):      
     return angle * math.pi / 180
@@ -127,7 +135,7 @@ def drive_straight(speed, distance):
     move_motors(speed, speed, distance, distance, distance, distance)
 
 def drive_stop(interval):
-    move_motors(0,0,0,0,0,0,0)
+    move_motors(0,0,0,0,0,0)
     time.sleep(interval)
 
 # turn centered around back wheel axle

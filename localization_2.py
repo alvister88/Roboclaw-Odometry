@@ -3,6 +3,7 @@ import time
 import math
 from tracemalloc import stop
 import numpy as np
+from beziercurve_purepursuit.api_controller import motor_speed
 from roboclaw_3 import Roboclaw
 from multipledispatch import dispatch
 from numbers import Number
@@ -320,23 +321,19 @@ while startup:
 if active_opmode:
     
     # show_encoder()
-    add_waypoint(7000, 20, -10, 120)
-    add_waypoint(7000, 30, -20)
-    localize()
-    drive_to_position(5000, 10, 0, 90)
-    drive_to_position(5000, 10, 10)
-    backtrack(5000, "all")
-
-    # add_waypoint(10000, 40, 40, 0) 
-    # add_waypoint(10000, 60, 0, -90)
-    # add_waypoint(10000, 20, -10, -180)
-    # add_waypoint(10000, 0, 0, 0)
+    # test pathing----------------------------
+    # add_waypoint(7000, 20, -10, 120)
+    # add_waypoint(7000, 30, -20)
     # localize()
-    # turn_center(4000, 360, 0)
-    
+    # drive_to_position(5000, 10, 0, 90)
+    # drive_to_position(5000, 10, 10)
+    # backtrack(5000, "all")
+    # --------------------------------------------
 
-    # turn_center(2000, 1000, 0)
-    # print(current_heading)
+    motor_speed(3000, 2000)
+    time.sleep(2)
+    motor_speed(0,0)
+    
     print("current position: " + str(current_position))
     print("current heading: " + str(current_heading))
     active_opmode = False
