@@ -6,6 +6,7 @@ import api_controller as api
 import generate_bezier as gb
 
 
+# update
 
 # Parameters
 k = 0.1  # look forward gain
@@ -64,7 +65,7 @@ class State:
         self.v += a * elapsed_time
         self.rear_x = self.x - ((WB / 2) * math.cos(self.yaw))
         self.rear_y = self.y - ((WB / 2) * math.sin(self.yaw))
-        
+
 
     def calc_distance(self, point_x, point_y):
         dx = self.rear_x - point_x
