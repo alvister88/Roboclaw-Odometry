@@ -7,6 +7,7 @@ from beziercurve_purepursuit.api_controller import motor_speed
 from roboclaw_3 import Roboclaw
 from multipledispatch import dispatch
 from numbers import Number
+import api_controller as api
 
 # Alvin's attempt at python localization x:)
 
@@ -37,6 +38,29 @@ def show_encoder():
     print(tuple(np.subtract(encoderL2, (0, 250000, 0))))
     print(tuple(np.subtract(encoderR1, (0, 250000, 0))))
     print(tuple(np.subtract(encoderR2, (0, 250000, 0))))
+
+def status_update():
+    global current_heading
+    global current_position
+    left_tics, right_tics = api.read_encoders()
+    left = api.inch_distance(left_tics)
+    right = api.inch_distance(right_tics)
+    theta = (right - left) / api.robot_width
+    center = (left + right) / 2
+
+    rad_final_angle = (api.current_heading) + theta
+
+    # x position
+    current_position[0] = center * (math.cos(rad_final_angle))
+    # y position
+    current_position[1] = center * (math.sin(rad_final_angle))
+    # true heading in radians
+    current_heading = rad_final_angle
+    api.normalize_radians()
+    print("current position: " + str(current_position))
+    print("current heading: " + str(current_heading))
+    # print("left: " + str(left) + " tics: " + str(left_tics))
+    # print("right: " + str(right) + " tics: " + str(right_tics))
 
 def tic_distance(inches):
     return ((inches / wheel_circumference) * tics_per_rev)
@@ -322,20 +346,19 @@ if active_opmode:
     
     # show_encoder()
     # test pathing----------------------------
-    # add_waypoint(7000, 20, -10, 120)
-    # add_waypoint(7000, 30, -20)
-    # localize()
-    # drive_to_position(5000, 10, 0, 90)
-    # drive_to_position(5000, 10, 10)
-    # backtrack(5000, "all")
+    add_waypoint(7000, 20, -10, 120)
+    add_waypoint(7000, 30, -20)
+    localize()
+    drive_to_position(5000, 10, 0, 90)
+    drive_to_position(5000, 10, 10)
+    backtrack(5000, "all")
     # --------------------------------------------
 
-    motor_speed(3000, 2000)
-    time.sleep(2)
-    motor_speed(0,0)
+   
     
     print("current position: " + str(current_position))
     print("current heading: " + str(current_heading))
+    status_update()
     active_opmode = False
       
 
