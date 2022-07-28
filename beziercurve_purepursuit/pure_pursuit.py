@@ -1,55 +1,28 @@
+"""
 
+Path tracking simulation with pure pursuit steering and PID speed control.
+
+author: Atsushi Sakai (@Atsushi_twi)
+        Guillaume Jacquenot (@Gjacquenot)
+
+"""
 import numpy as np
 import math
 import time
 import api_controller as api
-import generate_bezier as gb
-
-
-# update
 
 # Parameters
 k = 0.1  # look forward gain
 Lfc = 2.0  # [m] look-ahead distance
 Kp = 1.0  # speed proportional gain
 dt = 0.1  # [s] time tick
-WB = 13.5  # [m] wheel base of vehicle
+WB = 2.9  # [m] wheel base of vehicle
 
-start_time = time.time()
-total_time = 0
-prev_time = 0
-elapsed_time = 0
-
-def time_elasped():
-    total_time = time.time() - start_time
-    elapsed_time = total_time - prev_time
-    prev_time = total_time
-
-
-def status_update():
-    left_tics, right_tics = api.read_encoders()
-    left = api.inch_distance(left_tics)
-    right = api.inch_distance(right_tics)
-    theta = (right - left) / api.robot_width
-    radius = (right / theta) - (api.robot_width / 2)
-    
-    rad_final_angle = (api.current_heading) + theta
-    rad_init_angle = api.current_heading 
-    
-    # x position
-    api.current_position[0] = radius * (math.cos(rad_final_angle) - math.cos(rad_init_angle))
-    # y position
-    api.current_position[1] = radius * (math.sin(rad_final_angle) - math.sin(rad_init_angle))
-        # true heading in radians
-    api.current_heading = theta
-    api.normalize_radians
-    # print("left: " + str(left) + " tics: " + str(left_tics))
-    # print("right: " + str(right) + " tics: " + str(right_tics))
+show_animation = True
 
 
 class State:
-
-    def __init__(self, x= api.current_position[0], y=api.current_position[1], yaw = api.current_heading, v=0.0):
+    def __init__(self, x=0.0, y=0.0, yaw=0.0, v=0.0):
         self.x = x
         self.y = y
         self.yaw = yaw
@@ -58,14 +31,23 @@ class State:
         self.rear_y = self.y - ((WB / 2) * math.sin(self.yaw))
 
     def update(self, a, delta):
-        time_elasped()
-        self.x += self.v * math.cos(self.yaw) * elapsed_time
-        self.y += self.v * math.sin(self.yaw) * elapsed_time
-        self.yaw += self.v / WB * math.tan(delta) * elapsed_time
-        self.v += a * elapsed_time
+        self.x += self.v * math.cos(self.yaw) * dt
+        self.y += self.v * math.sin(self.yaw) * dt
+        self.yaw += self.v / WB * math.tan(delta) * dt
+        self.v += a * dt
         self.rear_x = self.x - ((WB / 2) * math.cos(self.yaw))
         self.rear_y = self.y - ((WB / 2) * math.sin(self.yaw))
-
+        omega = delta 
+        vel_R = self.v + (omega * api.robot_width / 2)
+        vel_L = self.v - (omega * api.robot_width / 2)
+        print("delta: " + str(delta))
+        print("omega: " + str(omega))
+        print("velocity: " + str(self.v))
+        print("velocity right: " + str(vel_R))
+        print("velocity left: " + str(vel_L) + "\n")
+        print("current position: " + str(api.current_position))
+        print("current heading: " + str(api.current_heading))
+        api.motor_speed(api.tic_distance(vel_L), api.tic_distance(vel_R))
 
     def calc_distance(self, point_x, point_y):
         dx = self.rear_x - point_x
@@ -74,7 +56,6 @@ class State:
 
 
 class States:
-
     def __init__(self):
         self.x = []
         self.y = []
@@ -97,7 +78,6 @@ def proportional_control(target, current):
 
 
 class TargetCourse:
-
     def __init__(self, cx, cy):
         self.cx = cx
         self.cy = cy
@@ -118,8 +98,8 @@ class TargetCourse:
             distance_this_index = state.calc_distance(self.cx[ind],
                                                       self.cy[ind])
             while True:
-                distance_next_index = state.calc_distance(self.cx[ind + 1],
-                                                          self.cy[ind + 1])
+                distance_next_index = state.calc_distance(
+                    self.cx[ind + 1], self.cy[ind + 1])
                 if distance_this_index < distance_next_index:
                     break
                 ind = ind + 1 if (ind + 1) < len(self.cx) else ind
@@ -158,47 +138,39 @@ def pure_pursuit_steer_control(state, trajectory, pind):
     return delta, ind
 
 
-
-def run(x_list, y_list):
-    global start_time
+def main():
     #  target course
-    cx = x_list
-    cy = y_list
+    cx = np.arange(0, 50, 0.5)
+    cy = [math.sin(ix / 5.0) * ix / 2.0 for ix in cx]
 
     target_speed = 10.0 / 3.6  # [m/s]
+
+    T = 100.0  # max simulation time
 
     # initial state
     state = State(x=-0.0, y=0.0, yaw=0.0, v=0.0)
 
     lastIndex = len(cx) - 1
-    start_time = time.time()
+    times = 0.0
     states = States()
-    states.append(start_time, state)
+    states.append(time, state)
     target_course = TargetCourse(cx, cy)
     target_ind, _ = target_course.search_target_index(state)
 
-    while lastIndex > target_ind:
+    while T >= times and lastIndex > target_ind:
 
-         # Calc control input
+        # Calc control input
         ai = proportional_control(target_speed, state.v)
-        di, target_ind = pure_pursuit_steer_control(
-            state, target_course, target_ind)
+        di, target_ind = pure_pursuit_steer_control(state, target_course,
+                                                    target_ind)
 
         state.update(ai, di)  # Control vehicle
 
-        time_elasped()
-        time += elapsed_time
-        states.append(time, state)
+        times += dt
+        states.append(times, state)
+        time.sleep(0.1)
 
 
-        
-    # Test
-    assert lastIndex >= target_ind, "Cannot goal"
-
-def to_waypoint(x_pos, y_pos, face_angle, curvature):
-    x_list, y_list = gb.generate_bezier_pathing(x_pos, y_pos, face_angle, curvature)
-
-    run(x_list, y_list)
-
-
-
+def to_waypoint():
+    print("Pure pursuit path tracking simulation start")
+    main()

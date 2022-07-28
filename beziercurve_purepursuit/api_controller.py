@@ -62,7 +62,7 @@ def show_encoder():
     print(tuple(np.subtract(encoderR2, (0, 250000, 0))))
 
 def tic_distance(inches):
-    return ((inches / wheel_circumference) * tics_per_rev)
+    return int((inches / wheel_circumference) * tics_per_rev)
 
 def inch_distance(tics):
     return ((tics * wheel_circumference) / tics_per_rev)
