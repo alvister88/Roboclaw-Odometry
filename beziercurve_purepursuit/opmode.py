@@ -25,7 +25,7 @@ while startup:
 
 if active_opmode:    
 
-    pp.to_waypoint()
+    pp.to_waypoint(20, 20, 90, 11)
     api.motor_speed(0,0)
     print(api.current_position)
     print(api.current_heading)

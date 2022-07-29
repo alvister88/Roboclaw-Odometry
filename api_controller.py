@@ -65,7 +65,7 @@ def tic_distance(inches):
     return int((inches / wheel_circumference) * tics_per_rev)
 
 def inch_distance(tics):
-    return int((tics * wheel_circumference) / tics_per_rev)
+    return (tics * wheel_circumference) / tics_per_rev
 
 def normalize():
     global current_heading
@@ -89,15 +89,6 @@ def to_radians(angle):
 def motor_speed(speed_L, speed_R):
     rcL.SpeedM1M2(left_side, speed_L, speed_L)
     rcR.SpeedM1M2(right_side, speed_R, speed_R)
-
-# def drive_by_speed()
-
-# def status_update():
-#     global time_interval
-#     global elapsed_time
-
-#     elapsed_time = time.time() - start_time
-#     time_interval = elapsed_time - time_interval
 
 def get_status():
     left_pos = int(rcL.ReadEncM2(left_side)[1]) - MID_QUADRATURE_VALUE

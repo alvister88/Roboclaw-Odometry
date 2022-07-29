@@ -90,19 +90,6 @@ def motor_speed(speed_L, speed_R):
     rcL.SpeedM1M2(left_side, speed_L, speed_L)
     rcR.SpeedM1M2(right_side, speed_R, speed_R)
 
-# def drive_by_speed()
-
-# def status_update():
-#     global time_interval
-#     global elapsed_time
-
-#     elapsed_time = time.time() - start_time
-#     time_interval = elapsed_time - time_interval
-
-def get_status():
-    left_pos = int(rcL.ReadEncM2(left_side)[1]) - MID_QUADRATURE_VALUE
-    right_pos = int(rcR.ReadEncM2(right_side)[1]) - MID_QUADRATURE_VALUE
-    return (left_pos, right_pos)
 
 # (tics/s, tics/s, inches, inches, inches, inches, (0 or 1))
 def move_motors(speed_L, speed_R, L_front, L_back, R_front, R_back):
@@ -165,7 +152,7 @@ def turn_heading(speed, new_heading):
     current_heading = new_heading
     normalize()
 
-# normalize global heading
+
 
   
 

@@ -79,8 +79,8 @@ class State:
         # self.rear_x = self.x - ((WB / 2) * math.cos(self.yaw))
         # self.rear_y = self.y - ((WB / 2) * math.sin(self.yaw))
         omega = alpha / dt
-        vel_R = self.v + (omega * 0.8 / 2)
-        vel_L = self.v - (omega * 0.8 / 2)
+        vel_R = self.v + (omega * 1 / 2)
+        vel_L = self.v - (omega * 1 / 2)
         print("delta: " + str(alpha))
         print("omega: " + str(omega))
         print("velocity: " + str(self.v))
@@ -219,18 +219,18 @@ def run(x_list, y_list):
     assert lastIndex >= target_ind, "Cannot goal"
 
 
-def to_waypoint():
+def to_waypoint(x_pos, y_pos, face_angle, curvature):
     # x_list, y_list = gb.generate_bezier_pathing(x_pos, y_pos, face_angle, curvature)
     x_list = [0, 
         2.167638483965014, 3.9941690962099137, 5.536443148688045,
         6.851311953352769, 7.995626822157433, 9.026239067055393, 10.0,
         10.973760932944607, 12.004373177842567, 13.14868804664723,
-        14.463556851311953, 16.005830903790088, 17.832361516034982, 20
+        14.463556851311953, 16.005830903790088, 17.832361516034982, 20, 21
     ]
     y_list = [0, 
         0.29154518950437314, 1.1078717201166182, 2.3615160349854225,
         3.965014577259475, 5.830903790087463, 7.871720116618075, 10.0,
         12.128279883381925, 14.169096209912539, 16.034985422740526,
-        17.63848396501458, 18.89212827988338, 19.708454810495624, 20
+        17.63848396501458, 18.89212827988338, 19.708454810495624, 20, 20
     ]
     run(x_list, y_list)

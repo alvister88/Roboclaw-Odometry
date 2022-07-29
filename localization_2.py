@@ -39,34 +39,12 @@ def show_encoder():
     print(tuple(np.subtract(encoderR1, (0, 250000, 0))))
     print(tuple(np.subtract(encoderR2, (0, 250000, 0))))
 
-def status_update():
-    global current_heading
-    global current_position
-    left_tics, right_tics = api.read_encoders()
-    left = api.inch_distance(left_tics)
-    right = api.inch_distance(right_tics)
-    theta = (right - left) / api.robot_width
-    center = (left + right) / 2
-
-    rad_final_angle = (api.current_heading) + theta
-
-    # x position
-    current_position[0] = center * (math.cos(rad_final_angle))
-    # y position
-    current_position[1] = center * (math.sin(rad_final_angle))
-    # true heading in radians
-    current_heading = rad_final_angle
-    api.normalize_radians()
-    print("current position: " + str(current_position))
-    print("current heading: " + str(current_heading))
-    # print("left: " + str(left) + " tics: " + str(left_tics))
-    # print("right: " + str(right) + " tics: " + str(right_tics))
 
 def tic_distance(inches):
     return ((inches / wheel_circumference) * tics_per_rev)
 
 # (tics/s, tics/s, inches, inches, inches, inches, (0 or 1))
-def move_motors(speed_L, speed_R, L_front, L_back, R_front, R_back, interval):
+def move_motors(speed_L, speed_R, L_front, L_back, R_front, R_back):
     
     L_front = tic_distance(L_front) + int(rcL.ReadEncM1(left_side)[1])
     L_back = tic_distance(L_back) + int(rcL.ReadEncM2(left_side)[1])
@@ -91,15 +69,15 @@ def move_motors(speed_L, speed_R, L_front, L_back, R_front, R_back, interval):
 
     time.sleep(0.1)
     
-def drive_straight(speed, distance, interval):
-    move_motors(speed, speed, distance, distance, distance, distance, interval)
+def drive_straight(speed, distance):
+    move_motors(speed, speed, distance, distance, distance, distance)
 
 def drive_stop(interval):
     move_motors(0,0,0,0,0,0,0)
     time.sleep(interval)
 
 # turn centered around back wheel axle
-def turn_center(speed, angle, interval):
+def turn_center(speed, angle):
     global current_heading
     global current_position
     # robot_length = 13.3
@@ -108,7 +86,7 @@ def turn_center(speed, angle, interval):
 
     turn_circumference = math.pi * robot_width
     distance = (angle/360.0) * turn_circumference
-    move_motors(speed, speed, -distance, -distance, distance, distance, interval)
+    move_motors(speed, speed, -distance, -distance, distance, distance)
     current_heading += angle
     normalize()
 
@@ -122,7 +100,7 @@ def turn_center(speed, angle, interval):
     # current_position[1] += y_offset
 
 # counter clockwise positve, 0 -> 180; 0 -> -180
-def turn_heading(speed, new_heading, interval):
+def turn_heading(speed, new_heading):
     global current_heading
     turn_angle = new_heading - current_heading
 
@@ -131,7 +109,7 @@ def turn_heading(speed, new_heading, interval):
     elif turn_angle < -180:
         turn_angle += 360
 
-    turn_center(speed, turn_angle, interval)
+    turn_center(speed, turn_angle)
     current_heading = new_heading
     normalize()
 
@@ -323,6 +301,8 @@ left_side = 0x81
 right_side = 0x80
 waypoints = []
 locations = []
+prev_left = 0
+prev_right = 0
 active_opmode = True
 startup = True
 
@@ -354,11 +334,8 @@ if active_opmode:
     backtrack(5000, "all")
     # --------------------------------------------
 
-   
     
-    print("current position: " + str(current_position))
-    print("current heading: " + str(current_heading))
-    status_update()
+    # status_update()
     active_opmode = False
       
 

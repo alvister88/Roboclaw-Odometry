@@ -68,10 +68,6 @@ def generate_bezier_pathing(x_pos, y_pos, face_angle, curvature):
     amt_waypoints = int(curve_length / true_point_interval)
     print(true_point_interval)
     print(amt_waypoints)
-
-    # api.current_position = [x_pos, y_pos]
-    # api.current_heading = face_angle
-    # api.normalize()
   
     def generate_waypoints():
         for t in range(1, amt_waypoints):
