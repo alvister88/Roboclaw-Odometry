@@ -15,8 +15,9 @@ https://replit.com/@AlvinZhu3/pure-pursuit#main.py
 # NOTES
 - api_controller is a handler for the roboclaw_3.py api
   - adapted methods from the base api so that it's usable
-- generate_bezier.py fully working pathfinding algorithm creates waypoints based on defined interval and returns a list of x coordinates and list of y coordinates
+- generate_bezier.py fully working pathfinding algorithm creates waypoints based on defined interval and parameters and returns a list of x and y coordinates
   - amount of waypoints adapted to distance interval between each waypoint
 - localization_2.py is a fully working simple odometry code with drive to coordinates, drive to position, and backtracking
 - pure_pursuit.py only works for one velocity, may need to make another path following algorithm
+
 
